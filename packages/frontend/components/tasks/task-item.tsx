@@ -60,7 +60,7 @@ function InlineEdit({
   return (
     <div 
         data-dnd-block
-        className={cn("absolute z-50 bg-background border rounded-md shadow-lg p-1 flex gap-1 items-center", className)} 
+        className={cn("absolute z-50 neu-surface-soft p-1 flex gap-1 items-center shadow-[var(--shadow-soft)]", className)} 
         onClick={(e) => e.stopPropagation()}
         onBlur={handleBlur} 
         tabIndex={-1}
@@ -122,7 +122,7 @@ function InlineEdit({
   );
 }
 
-const ANIMATION_DURATION = 150;
+const ANIMATION_DURATION = 2000;
 
 export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) {
   const updateTask = useUpdateTask();
@@ -259,6 +259,14 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
   const isCompleted = task.status === TaskStatus.COMPLETED;
   const isInProgress = task.status === TaskStatus.IN_PROGRESS;
 
+  const surfaceClass = !isCompleted
+    ? isOverdueOrToday
+      ? "task-surface-overdue"
+      : isInProgress
+        ? "task-surface-progress"
+        : ""
+    : "";
+
   const updatePriority = (val: string) => {
       if (Object.values(TaskPriority).includes(val as TaskPriority)) {
           updateTask.mutate({ id: task.id, priority: val as TaskPriority });
@@ -282,10 +290,10 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     <div 
         key="status"
         className={cn(
-        "px-2 py-0.5 rounded border shadow-sm font-medium cursor-pointer hover:opacity-80 transition-opacity select-none",
+        "px-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all select-none neu-surface-soft shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)]",
         task.status === TaskStatus.IN_PROGRESS 
             ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
-            : "bg-secondary text-muted-foreground border-border"
+            : "text-muted-foreground"
         )}
         onClick={handleToggleProgress}
     >
@@ -306,8 +314,8 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
       ) : (
           <div 
               className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded border bg-white dark:bg-black shadow-sm cursor-pointer hover:border-primary",
-              !isCompleted && isOverdueOrToday ? "border-red-200 text-red-600 font-medium" : "border-border text-muted-foreground",
+              "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft shadow-[var(--shadow-soft)] cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs",
+              !isCompleted && isOverdueOrToday ? "ring-1 ring-red-300 text-red-600 font-semibold dark:ring-red-500/50" : "text-muted-foreground",
                // If not set, invisible unless group hover
               !task.due_date && "opacity-0 group-hover:opacity-100 transition-opacity"
               )}
@@ -334,8 +342,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
       ) : (
           <div 
               className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded border bg-white dark:bg-black shadow-sm capitalize cursor-pointer hover:border-primary",
-              "border-border",
+              "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft shadow-[var(--shadow-soft)] capitalize cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs",
               priorityColor[task.priority]
               )}
               onClick={(e) => { e.stopPropagation(); setEditingField("priority"); }}
@@ -371,14 +378,14 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
                 task.tags.map((tag) => (
                     <span
                     key={tag}
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground text-muted-foreground hover:bg-primary/10"
+                    className="flex items-center gap-1 px-2 py-1 rounded-full neu-surface-soft text-muted-foreground shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)]"
                     >
                     <Tag className="h-3 w-3" />
                     {tag}
                     </span>
                 ))
             ) : (
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground opacity-50 hover:opacity-100 ml-1">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-full neu-surface-soft text-muted-foreground opacity-60 hover:opacity-100 shadow-[var(--shadow-soft)] ml-1">
                     <Tag className="h-3 w-3" /> Add Tags
                 </span>
             )}
@@ -390,7 +397,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
   const DescriptionBadge = !task.description && (
       <div 
         key="description"
-        className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-dashed border-muted-foreground/30 bg-transparent text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-secondary hover:border-solid"
+        className="flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-muted-foreground/30 bg-transparent text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer neu-surface-soft hover:shadow-[var(--shadow-raised)]"
         onClick={handleAddDescription}
         title="Add description"
       >
@@ -421,24 +428,14 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
       {...attributes}
       {...dragListeners}
       className={cn(
-        "group flex items-start gap-3 p-4 rounded-lg border transition-colors relative overflow-visible cursor-grab active:cursor-grabbing",
-        // Duration reduced to 150ms for faster feedback, or removed for instant
-        isUpdated && "duration-0", // Instant on
-        !isUpdated && "duration-700", // Slow off
-        isDragging && "shadow-lg ring-2 ring-primary/50 cursor-grabbing",
-        
-        isCompleted 
-            ? "opacity-60 bg-muted/50 border-transparent" 
-            : (isUpdated 
-                ? "bg-blue-100 border-blue-300 dark:bg-blue-900/20 dark:border-blue-800" 
-                : (isOverdueOrToday 
-                    ? "bg-red-300/80 border-red-200 dark:bg-red-900/10 dark:border-red-900/30" 
-                    : (isInProgress 
-                        ? "bg-[#FDE68A]/80 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/30"
-                        : "bg-card hover:shadow-sm"
-                      )
-                  )
-              )
+        "group flex items-start gap-3 p-4 rounded-2xl neu-surface transition-all relative overflow-visible cursor-grab active:cursor-grabbing shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)] hover:-translate-y-0.5 task-updated-container",
+        surfaceClass,
+        "task-updated-overlay task-updated-ring",
+        isUpdated && "is-updated ring-2 ring-[rgba(123,223,242,0.35)]",
+        isDragging && "shadow-[var(--shadow-strong)] ring-2 ring-[rgba(31,42,68,0.45)] scale-[1.01] cursor-grabbing",
+        isCompleted && "opacity-70 saturate-75",
+        !isCompleted && isOverdueOrToday && "ring-2 ring-[rgba(239,68,68,0.35)] dark:ring-[rgba(248,113,113,0.5)]",
+        !isCompleted && !isOverdueOrToday && isInProgress && "ring-2 ring-[rgba(255,201,122,0.38)] dark:ring-[rgba(255,193,94,0.45)]"
       )}
       onClick={() => {
         if (isDragging || draggedRef.current) return;

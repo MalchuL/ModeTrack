@@ -119,7 +119,7 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
   };
 
   return (
-    <div className="space-y-4 mb-4">
+    <div className="space-y-4 mb-6 neu-surface-soft p-4 rounded-2xl shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1 min-w-[200px] relative group">
           <Input

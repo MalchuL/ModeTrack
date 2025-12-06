@@ -25,9 +25,9 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
 
   // Simple portal implementation
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 glass-overlay flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg animate-in zoom-in-95 duration-200">
-        <Card>
+        <Card className="neu-surface-strong backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>{title}</CardTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>

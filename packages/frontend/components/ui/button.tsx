@@ -15,18 +15,18 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-200 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-50 shadow-[var(--shadow-soft)]",
           {
-            "bg-primary text-primary-foreground hover:bg-primary/90": variant === "default",
-            "bg-destructive text-destructive-foreground hover:bg-destructive/90": variant === "destructive",
-            "border border-input bg-background hover:bg-accent hover:text-accent-foreground": variant === "outline",
-            "bg-secondary text-secondary-foreground hover:bg-secondary/80": variant === "secondary",
-            "hover:bg-accent hover:text-accent-foreground": variant === "ghost",
-            "text-primary underline-offset-4 hover:underline": variant === "link",
+            "bg-gradient-to-br from-[#2d3a5c] to-[#1f2a44] text-primary-foreground shadow-[var(--shadow-strong)] hover:brightness-105": variant === "default",
+            "bg-gradient-to-br from-[#f87171] to-[#ef4444] text-destructive-foreground shadow-[var(--shadow-strong)] hover:brightness-105": variant === "destructive",
+            "neu-surface-soft text-foreground hover:-translate-y-0.5 border border-border": variant === "outline",
+            "bg-gradient-to-br from-[#f8fbff] via-[#eef3ff] to-[#e1e7f5] text-secondary-foreground shadow-[var(--shadow-raised)] hover:shadow-[var(--shadow-strong)]": variant === "secondary",
+            "bg-transparent shadow-none hover:shadow-[var(--shadow-soft)]": variant === "ghost",
+            "text-primary underline-offset-4 hover:underline shadow-none": variant === "link",
             "h-10 px-4 py-2": size === "default",
             "h-9 rounded-md px-3": size === "sm",
-            "h-11 rounded-md px-8": size === "lg",
-            "h-10 w-10": size === "icon",
+            "h-11 rounded-xl px-8": size === "lg",
+            "h-10 w-10 p-0": size === "icon",
           },
           className
         )}

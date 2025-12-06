@@ -189,10 +189,10 @@ export function TaskList() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Tasks</h2>
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="shadow-[var(--shadow-strong)]">
           <Plus className="h-4 w-4 mr-2" />
           New Task
         </Button>
@@ -209,7 +209,7 @@ export function TaskList() {
           Error loading tasks. Please try again.
         </div>
       ) : processedTasks.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg bg-muted/10">
+        <div className="text-center py-12 neu-surface-soft rounded-2xl shadow-[var(--shadow-soft)]">
           <p className="text-muted-foreground">No tasks found.</p>
           <Button variant="link" onClick={handleCreate}>
             Create your first task

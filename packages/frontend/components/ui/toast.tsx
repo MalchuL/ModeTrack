@@ -53,14 +53,14 @@ export function ToastContainer() {
         <div
           key={toast.id}
           className={cn(
-            "pointer-events-auto flex items-center justify-between rounded-lg border p-4 shadow-lg transition-all animate-in slide-in-from-right",
+            "pointer-events-auto flex items-center justify-between rounded-xl neu-surface-soft border border-transparent p-4 shadow-[var(--shadow-raised)] transition-all animate-in slide-in-from-right",
             {
-              "bg-background border-border text-foreground": toast.type === "info",
-              "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-900 dark:text-green-200":
+              "ring-1 ring-border text-foreground": toast.type === "info",
+              "ring-1 ring-green-200/80 text-green-800 dark:ring-green-900 dark:text-green-200":
                 toast.type === "success",
-              "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-900 dark:text-red-200":
+              "ring-1 ring-red-200/80 text-red-800 dark:ring-red-900 dark:text-red-200":
                 toast.type === "error",
-              "bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-900 dark:text-yellow-200":
+              "ring-1 ring-yellow-200/80 text-yellow-800 dark:ring-yellow-900 dark:text-yellow-200":
                 toast.type === "warning",
             }
           )}
@@ -95,7 +95,7 @@ export function ToastAction({ altText, onClick, children }: ToastActionProps) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex h-8 items-center justify-center rounded-md border bg-transparent px-3 text-xs font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background"
+      className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-transparent px-3 text-xs font-medium transition-all hover:shadow-[var(--shadow-soft)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 disabled:opacity-50 disabled:pointer-events-none ring-offset-background"
       title={altText}
     >
       {children}
