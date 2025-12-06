@@ -34,3 +34,19 @@
 ## Music
 
 - Playlist and player area is under development.
+
+## Customization: Change the App Name
+
+You can easily customize the name of the app (displayed in the UI and various places) by editing a single line of code.
+
+1. Open the file:  
+   `packages/frontend/lib/constants.ts`
+
+2. Find (or add) this line, and change `"ModeTrack"` to your desired app name:
+   ```ts
+   export const APP_NAME = "ModeTrack";
+   ```
+
+3. Save the file and refresh your app to see the new name reflected throughout the UI.
+
+_This lets you personalize the app branding with zero coding required beyond changing the name!_
