@@ -59,6 +59,7 @@ function InlineEdit({
 
   return (
     <div 
+        data-dnd-block
         className={cn("absolute z-50 bg-background border rounded-md shadow-lg p-1 flex gap-1 items-center", className)} 
         onClick={(e) => e.stopPropagation()}
         onBlur={handleBlur} 
@@ -129,6 +130,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
   
   const [editingField, setEditingField] = useState<"priority" | "date" | "tags" | null>(null);
   const [isUpdated, setIsUpdated] = useState(false);
+  const draggedRef = useRef(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -138,10 +140,42 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     },
   });
 
+  useEffect(() => {
+    if (isDragging) {
+      draggedRef.current = true;
+    } else if (draggedRef.current) {
+      // Reset shortly after drag ends to allow click suppression
+      const t = setTimeout(() => {
+        draggedRef.current = false;
+      }, 50);
+      return () => clearTimeout(t);
+    }
+  }, [isDragging]);
+
   const dragStyle = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? "transform 0s" : transition,
     willChange: isDragging ? "transform" : undefined,
+  };
+
+  const shouldBlockDrag = (target: EventTarget | null) => {
+    const el = target as HTMLElement | null;
+    if (!el) return false;
+    return Boolean(
+      el.closest(
+        'input, select, textarea, button, [data-dnd-block]'
+      )
+    );
+  };
+
+  const dragListeners = {
+    ...listeners,
+    onPointerDown: (event: React.PointerEvent) => {
+      if (shouldBlockDrag(event.target)) {
+        return;
+      }
+      listeners.onPointerDown?.(event);
+    },
   };
 
   const prevUpdatedAt = useRef(task.updated_at);
@@ -379,8 +413,10 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     <div
       ref={setNodeRef}
       style={dragStyle}
+      {...attributes}
+      {...dragListeners}
       className={cn(
-        "group flex items-start gap-3 p-4 rounded-lg border transition-colors relative overflow-visible",
+        "group flex items-start gap-3 p-4 rounded-lg border transition-colors relative overflow-visible cursor-grab active:cursor-grabbing",
         // Duration reduced to 150ms for faster feedback, or removed for instant
         isUpdated && "duration-0", // Instant on
         !isUpdated && "duration-700", // Slow off
@@ -399,17 +435,18 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
                   )
               )
       )}
-      onClick={() => onEdit(task)}
+      onClick={() => {
+        if (isDragging || draggedRef.current) return;
+        onEdit(task);
+      }}
     >
-      <button
-        {...attributes}
-        {...listeners}
+      <div
         onClick={(e) => e.stopPropagation()}
-        className="mt-1 text-muted-foreground hover:text-primary transition-colors z-10 flex-shrink-0 cursor-grab active:cursor-grabbing"
-        aria-label="Drag to reorder"
+        className="mt-1 text-muted-foreground transition-colors z-10 flex-shrink-0 select-none"
+        aria-hidden="true"
       >
-        <GripVertical className="h-4 w-4" />
-      </button>
+        <GripVertical className="h-4 w-4 opacity-40" />
+      </div>
       <button
         onClick={(e) => {
           e.stopPropagation();
