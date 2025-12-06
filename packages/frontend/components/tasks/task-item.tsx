@@ -35,11 +35,7 @@ function InlineEdit({
       inputRef.current.focus();
     }
     if (selectRef.current && type === "select") {
-        // Simulate click to open (not fully possible in all browsers via JS)
-        // Or just focus
         selectRef.current.focus();
-        // Native select cannot be forced open via JS easily. 
-        // But focus helps keyboard navigation.
     }
   }, [type]);
 
@@ -55,7 +51,6 @@ function InlineEdit({
       if (e.relatedTarget && (e.currentTarget.contains(e.relatedTarget as Node))) {
           return;
       }
-      // Auto-save on blur for all types
       onSave(value);
   };
 
@@ -74,7 +69,6 @@ function InlineEdit({
                 setValue(e.target.value);
                 onSave(e.target.value);
             }}
-            // Using standard HTML select for better direct behavior
             className="h-8 w-[120px] text-xs bg-transparent border rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
         >
@@ -129,6 +123,19 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
   const deleteTask = useDeleteTask();
   
   const [editingField, setEditingField] = useState<"priority" | "date" | "tags" | null>(null);
+  const [isUpdated, setIsUpdated] = useState(false);
+
+  const prevUpdatedAt = useRef(task.updated_at);
+  
+  useEffect(() => {
+      if (task.updated_at !== prevUpdatedAt.current) {
+          setIsUpdated(true);
+          prevUpdatedAt.current = task.updated_at;
+          const timer = setTimeout(() => setIsUpdated(false), 1000);
+          return () => clearTimeout(timer);
+      }
+  }, [task.updated_at]);
+
 
   const handleToggleStatus = () => {
     const newStatus =
@@ -173,6 +180,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
   const dueDate = task.due_date ? startOfDay(new Date(task.due_date)) : null;
   const isOverdueOrToday = dueDate && (isBefore(dueDate, today) || isToday(dueDate));
   const isCompleted = task.status === TaskStatus.COMPLETED;
+  const isInProgress = task.status === TaskStatus.IN_PROGRESS;
 
   const updatePriority = (val: string) => {
       if (Object.values(TaskPriority).includes(val as TaskPriority)) {
@@ -302,7 +310,6 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
     </div>
   );
 
-  // Description Badge (Add Description)
   const DescriptionBadge = !task.description && (
       <div 
         key="description"
@@ -315,21 +322,15 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
       </div>
   );
 
-
-  // Order: 
-  // 1. Set properties: Status, Due Date, Priority, Tags
-  // 2. Unset properties: Due Date, Tags (Priority is always set)
-  // 3. Description badge (last if unset)
-  
   const setBadges = [];
   const unsetBadges = [];
 
-  if (StatusBadge) setBadges.push(StatusBadge); // Status always first
+  if (StatusBadge) setBadges.push(StatusBadge);
   
   if (task.due_date) setBadges.push(DateBadge);
   else unsetBadges.push(DateBadge);
 
-  setBadges.push(PriorityBadge); // Priority always set
+  setBadges.push(PriorityBadge);
 
   if (task.tags.length > 0) setBadges.push(TagsBadge);
   else unsetBadges.push(TagsBadge);
@@ -340,8 +341,22 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
     <div
       className={cn(
         "group flex items-start gap-3 p-4 rounded-lg border transition-all relative overflow-visible",
-        isCompleted ? "opacity-60 bg-muted/50 border-transparent" : "bg-card hover:shadow-sm",
-        !isCompleted && isOverdueOrToday && "bg-red-50/80 border-red-200 dark:bg-red-900/10 dark:border-red-900/30"
+        // Duration reduced to 150ms for faster feedback, or removed for instant
+        isUpdated && "duration-0", // Instant on
+        !isUpdated && "duration-500", // Slow off
+        
+        isCompleted 
+            ? "opacity-60 bg-muted/50 border-transparent" 
+            : (isUpdated 
+                ? "bg-blue-100 border-blue-300 dark:bg-blue-900/20 dark:border-blue-800" 
+                : (isOverdueOrToday 
+                    ? "bg-red-300/80 border-red-200 dark:bg-red-900/10 dark:border-red-900/30" 
+                    : (isInProgress 
+                        ? "bg-[#FDE68A]/80 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/30"
+                        : "bg-card hover:shadow-sm"
+                      )
+                  )
+              )
       )}
       onClick={() => onEdit(task)}
     >
@@ -361,10 +376,9 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
 
       <div className="flex-1 min-w-0 z-10">
         <div className="flex items-start justify-between gap-2">
-          {/* Title: w-fit to allow clicking on the side */}
           <h3
             className={cn(
-              "font-medium leading-none -ml-1 px-1 rounded outline-none focus:bg-background focus:ring-1 focus:ring-ring min-h-[1.25rem] cursor-text w-fit max-w-[calc(100%-6rem)]", // Increased gap for buttons
+              "font-medium leading-none -ml-1 px-1 rounded outline-none focus:bg-background focus:ring-1 focus:ring-ring min-h-[1.25rem] cursor-text w-fit max-w-[calc(100%-6rem)]", 
               isCompleted && "line-through text-muted-foreground"
             )}
             contentEditable={!isCompleted}
@@ -377,7 +391,6 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
           </h3>
           
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-auto">
-             {/* Actions pushed to right */}
              <Button
                 variant="ghost"
                 size="icon"
