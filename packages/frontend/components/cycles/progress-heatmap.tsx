@@ -10,6 +10,10 @@ interface ProgressHeatmapProps {
 
 export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
   const today = startOfDay(new Date());
+  const cellBase =
+    "h-6 w-6 rounded-[10px] border border-white/18 bg-white/12 backdrop-blur-md shadow-[var(--shadow-soft)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-transparent";
+  const placeholderCell =
+    "opacity-50 cursor-not-allowed pointer-events-none select-none border-white/12 bg-white/8";
 
   // Align heatmap so the first day of the cycle sits under its weekday column.
   const firstDate = data[0] ? startOfDay(new Date(data[0].date)) : null;
@@ -68,7 +72,7 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
               return (
                 <div
                   key={`${entry.key}-${wIdx}`}
-                  className="h-6 w-6 rounded-sm border border-border/30 bg-foreground/5 opacity-40 cursor-not-allowed relative pointer-events-none select-none focus:outline-none focus:ring-0"
+                  className={cn(cellBase, placeholderCell, "relative")}
                   tabIndex={-1}
                   role="presentation"
                 >
@@ -84,7 +88,7 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
               return (
                 <div
                   key={`${entry.key}-${wIdx}`}
-                  className="h-6 w-6 rounded-sm border border-border/30 bg-foreground/5 opacity-40 cursor-not-allowed relative pointer-events-none select-none focus:outline-none focus:ring-0"
+                  className={cn(cellBase, placeholderCell, "relative")}
                   tabIndex={-1}
                   role="presentation"
                 />
@@ -106,12 +110,17 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
                 aria-disabled={isFuture}
                 title={`${format(dateObj, "MMM d, yyyy")}: ${day.completed ? "Completed" : "Incomplete"}`}
                 className={cn(
-                  "h-6 w-6 rounded-sm border transition-all",
-                  day.completed && "bg-green-500 border-green-600 hover:bg-green-600",
-                  !day.completed && isPast && "bg-red-500 border-red-600 hover:bg-red-600 opacity-70",
-                  !day.completed && !isPast && "bg-secondary border-transparent hover:border-border",
-                  isToday && "ring-2 ring-ring ring-offset-1",
-                  isFuture && "opacity-30 cursor-not-allowed hover:bg-secondary"
+                  cellBase,
+                  day.completed &&
+                    "bg-green-400/75 border-green-200/90 text-foreground shadow-[var(--shadow-raised)] hover:bg-green-400/90 hover:border-green-100",
+                  !day.completed &&
+                    isPast &&
+                    "bg-red-500/65 border-red-300/90 text-foreground shadow-[var(--shadow-raised)] hover:bg-red-500/80",
+                  !day.completed &&
+                    !isPast &&
+                    "bg-white/14 border-white/26 hover:bg-white/22 hover:border-white/34",
+                  isToday && "ring-2 ring-ring ring-offset-1 ring-offset-transparent",
+                  isFuture && "opacity-30 cursor-not-allowed hover:bg-white/12 hover:border-white/18"
                 )}
               />
             );
