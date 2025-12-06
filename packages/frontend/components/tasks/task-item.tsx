@@ -152,8 +152,13 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     }
   }, [isDragging]);
 
+  const coercedTransform =
+    transform && typeof transform === "object"
+      ? { ...transform, scaleX: 1, scaleY: 1 }
+      : transform;
+
   const dragStyle = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(coercedTransform),
     transition: isDragging ? "transform 0s" : transition,
     willChange: isDragging ? "transform" : undefined,
   };
@@ -174,7 +179,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
       if (shouldBlockDrag(event.target)) {
         return;
       }
-      listeners.onPointerDown?.(event);
+      listeners?.onPointerDown?.(event);
     },
   };
 
