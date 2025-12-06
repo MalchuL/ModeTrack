@@ -67,7 +67,7 @@ export async function generateSampleData({
     used.add(offset);
   }
 
-  for (const offset of used) {
+  for (const offset of Array.from(used)) {
     const date = addDays(cycleStart, offset);
     if (date > today) continue;
     await toggleProgress({
