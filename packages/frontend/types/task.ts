@@ -17,10 +17,10 @@ export interface Task {
   description?: string;
   priority: TaskPriority;
   status: TaskStatus;
-  due_date?: string; // ISO string
+  due_date?: string | null; // ISO string
   position?: number | null;
   tags: string[];
-  goal_id?: number;
+  goal_id?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,5 +53,10 @@ export interface TaskFilters {
   goal_id?: number;
   tag?: string;
   search?: string;
+}
+
+export interface TaskListResponse {
+  items: Task[];
+  count: number;
 }
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Task, TaskCreate, TaskUpdate, TaskFilters, TaskStatus } from "@/types/task";
+import { Task, TaskCreate, TaskUpdate, TaskFilters, TaskStatus, TaskListResponse } from "@/types/task";
 import { toast } from "@/components/ui/toast";
 
 // Keys
@@ -13,16 +13,46 @@ export const taskKeys = {
 };
 
 // API functions
-const fetchTasks = async (filters?: TaskFilters) => {
-  const params = new URLSearchParams();
-  if (filters?.status) params.append("status", filters.status);
-  if (filters?.priority) params.append("priority", filters.priority);
-  if (filters?.goal_id) params.append("goal_id", filters.goal_id.toString());
-  if (filters?.tag) params.append("tag", filters.tag);
-  if (filters?.search) params.append("search", filters.search);
-  
-  const { data } = await api.get<Task[]>("/tasks", { params });
-  return data;
+const TASK_PAGE_SIZE = 100;
+
+const buildTaskParams = (filters: TaskFilters | undefined, skip: number) => {
+  const params: Record<string, string | number> = {
+    skip,
+    limit: TASK_PAGE_SIZE,
+  };
+
+  if (filters?.status) params.status = filters.status;
+  if (filters?.priority) params.priority = filters.priority;
+  if (filters?.goal_id !== undefined) params.goal_id = filters.goal_id;
+  if (filters?.tag) params.tag = filters.tag;
+  if (filters?.search) params.search = filters.search;
+
+  return params;
+};
+
+const fetchTasks = async (filters?: TaskFilters): Promise<TaskListResponse> => {
+  const aggregated: Task[] = [];
+  let total = 0;
+  let skip = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const params = buildTaskParams(filters, skip);
+    const { data } = await api.get<TaskListResponse>("/tasks", { params });
+
+    aggregated.push(...data.items);
+    total = data.count;
+    skip = aggregated.length;
+
+    const receivedFullPage = data.items.length === TASK_PAGE_SIZE;
+    hasMore = aggregated.length < total && receivedFullPage;
+
+    if (!receivedFullPage || data.items.length === 0) {
+      break;
+    }
+  }
+
+  return { items: aggregated, count: total };
 };
 
 const fetchTask = async (id: number) => {
@@ -94,15 +124,18 @@ export function useUpdateTask() {
       await queryClient.cancelQueries({ queryKey: taskKeys.all });
 
       // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.list({}));
+      const previousTasks = queryClient.getQueryData<TaskListResponse>(taskKeys.list({}));
 
       // Optimistically update to the new value
       if (previousTasks) {
-        queryClient.setQueryData<Task[]>(
+        queryClient.setQueryData<TaskListResponse>(
           taskKeys.list({}),
-          previousTasks.map((task) =>
-            task.id === newTask.id ? { ...task, ...newTask } : task
-          )
+          {
+            ...previousTasks,
+            items: previousTasks.items.map((task) =>
+              task.id === newTask.id ? { ...task, ...newTask } : task
+            ),
+          }
         );
       }
       
@@ -157,12 +190,16 @@ export function useReorderTasks() {
     onMutate: async ({ status, orderedIds }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.all });
 
-      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.list({})) || [];
+      const previousTasks =
+        queryClient.getQueryData<TaskListResponse>(taskKeys.list({})) || {
+          items: [],
+          count: 0,
+        };
 
       // Optimistically update only tasks in this status
-      const reordered = [...previousTasks];
+      const reordered = [...previousTasks.items];
       const statusTasks = orderedIds
-        .map((id) => previousTasks.find((t) => t.id === id && t.status === status))
+        .map((id) => reordered.find((t) => t.id === id && t.status === status))
         .filter(Boolean) as Task[];
 
       const otherStatus = reordered.filter((t) => t.status !== status);
@@ -175,7 +212,10 @@ export function useReorderTasks() {
         position: idx + 1,
       }));
 
-      queryClient.setQueryData<Task[]>(taskKeys.list({}), [...otherStatus, ...newStatusOrder]);
+      queryClient.setQueryData<TaskListResponse>(taskKeys.list({}), {
+        ...previousTasks,
+        items: [...otherStatus, ...newStatusOrder],
+      });
 
       return { previousTasks };
     },

@@ -31,26 +31,25 @@ class TaskService:
                    tag: Optional[str] = None,
                    search: Optional[str] = None,
                    start_date: Optional[datetime] = None,
-                   end_date: Optional[datetime] = None) -> List[Task]:
+                   end_date: Optional[datetime] = None) -> Dict[str, Any]:
         """
-        List tasks with filtering options.
+        List tasks with filtering options and include total count.
         """
-        # Use specific filter method if filters are present, otherwise generic get_all
-        if any([status, priority, goal_id, tag, search, start_date, end_date]):
-            tasks = self.task_repo.filter_tasks(
-                status=status, 
-                priority=priority, 
-                goal_id=goal_id, 
-                tag=tag,
-                search=search,
-                start_date=start_date,
-                end_date=end_date
-            )
-        else:
-            tasks = self.task_repo.get_all(skip=skip, limit=limit)
+        tasks = self.task_repo.filter_tasks(
+            status=status, 
+            priority=priority, 
+            goal_id=goal_id, 
+            tag=tag,
+            search=search,
+            start_date=start_date,
+            end_date=end_date
+        )
 
         ordered = self.task_repo.sort_tasks(tasks)
-        return ordered[skip : skip + limit]
+        total_count = len(ordered)
+        paged = ordered[skip : skip + limit] if limit else ordered[skip:]
+
+        return {"items": paged, "count": total_count}
 
     def create_task(self, task_in: TaskCreate) -> Task:
         # Validate business rules here if any

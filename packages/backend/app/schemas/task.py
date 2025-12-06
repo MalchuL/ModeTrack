@@ -40,3 +40,8 @@ class TaskResponse(TaskBase):
     class Config:
         from_attributes = True
 
+
+class TaskListResponse(BaseModel):
+    items: List[TaskResponse] = Field(..., description="Tasks for this page")
+    count: int = Field(..., description="Total tasks matching the filters")
+

@@ -24,6 +24,11 @@ export default function Home() {
           <h2 className="text-2xl font-semibold mb-2">Music</h2>
           <p className="text-muted-foreground">Playlists for work and break.</p>
         </Link>
+
+        <Link href="/docs" className="p-6 border rounded-lg hover:bg-secondary transition-colors">
+          <h2 className="text-2xl font-semibold mb-2">Documentation</h2>
+          <p className="text-muted-foreground">Read how to use the app.</p>
+        </Link>
       </div>
     </main>
   );

@@ -15,20 +15,28 @@ import {
 import { Plus } from "lucide-react";
 import { Task, TaskFilters as ITaskFilters, TaskStatus, TaskPriority } from "@/types/task";
 import { useTasks, useReorderTasks } from "@/hooks/use-tasks";
+import { useCreateTask } from "@/hooks/use-tasks";
+import { useCreateCycle, useCreateGoal, useToggleProgress } from "@/hooks/use-cycles";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { TaskItem } from "./task-item";
 import { TaskFilters } from "./task-filters";
 import { TaskEditor } from "./task-editor";
+import { generateSampleData } from "@/lib/sample-data";
 
 export function TaskList() {
   const [filters, setFilters] = useState<ITaskFilters>({});
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [isSeeding, setIsSeeding] = useState(false);
 
-  const { data: tasks, isLoading, error } = useTasks(filters);
+  const { data: tasksData, isLoading, error } = useTasks(filters);
   const [orderedIds, setOrderedIds] = useState<number[]>([]);
   const reorderTasks = useReorderTasks();
+  const createTask = useCreateTask();
+  const createCycle = useCreateCycle();
+  const createGoal = useCreateGoal();
+  const toggleProgress = useToggleProgress();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -53,7 +61,8 @@ export function TaskList() {
 
   // Client-side sorting and filtering
   const processedTasks = useMemo(() => {
-    if (!tasks) return [];
+    if (!tasksData?.items) return [];
+    const tasks = tasksData.items;
 
     // 1. Filter completed by default if no status filter is set
     let filtered = [...tasks];
@@ -141,7 +150,7 @@ export function TaskList() {
         return createdA - createdB;
     });
 
-  }, [tasks, filters.status]);
+  }, [tasksData?.items, filters.status]);
 
   // Keep local drag order in sync with server data, preserving manual order when possible
   useEffect(() => {
@@ -188,6 +197,31 @@ export function TaskList() {
     });
   };
 
+  const seedSampleData = async () => {
+    try {
+      setIsSeeding(true);
+      await generateSampleData({
+        createCycle: createCycle.mutateAsync,
+        createGoal: createGoal.mutateAsync,
+        createTask: createTask.mutateAsync,
+        toggleProgress: toggleProgress.mutateAsync,
+      });
+    } catch (err) {
+      console.error("Failed to seed sample data", err);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const hasFilters =
+    !!filters.status ||
+    !!filters.priority ||
+    !!filters.goal_id ||
+    !!filters.tag ||
+    !!filters.search;
+
+  const shouldSuggestSampleData = !hasFilters && (tasksData?.count ?? 0) === 0;
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -209,11 +243,18 @@ export function TaskList() {
           Error loading tasks. Please try again.
         </div>
       ) : processedTasks.length === 0 ? (
-        <div className="text-center py-12 neu-surface-soft rounded-2xl shadow-[var(--shadow-soft)]">
+        <div className="text-center py-12 neu-surface-soft rounded-2xl shadow-[var(--shadow-soft)] space-y-3">
           <p className="text-muted-foreground">No tasks found.</p>
-          <Button variant="link" onClick={handleCreate}>
-            Create your first task
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <Button variant="link" onClick={handleCreate}>
+              Create your first task
+            </Button>
+            {shouldSuggestSampleData && (
+              <Button onClick={seedSampleData} disabled={isSeeding}>
+                {isSeeding ? "Seeding…" : "Generate sample data"}
+              </Button>
+            )}
+          </div>
         </div>
       ) : (
         <DndContext

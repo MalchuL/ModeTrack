@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.models.task import TaskStatus, TaskPriority
-from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse, TaskListResponse
 from pydantic import BaseModel, Field
 from app.services.task import TaskService
 
@@ -17,7 +17,7 @@ class TaskReorderPayload(BaseModel):
     ordered_ids: List[int] = Field(..., description="Task IDs in desired order for this status")
 
 
-@router.get("/", response_model=List[TaskResponse])
+@router.get("/", response_model=TaskListResponse)
 def list_tasks(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -27,7 +27,7 @@ def list_tasks(
     goal_id: Optional[int] = None,
     tag: Optional[str] = None,
     search: Optional[str] = None,
-) -> Any:
+) -> TaskListResponse:
     """
     Retrieve tasks.
     """
