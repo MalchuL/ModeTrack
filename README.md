@@ -1,4 +1,4 @@
-# Personal Productivity App
+# ModeTrack
 
 A comprehensive productivity application combining Task Management, 12-Week Year Goal Tracking, Pomodoro Timer, and Context-Aware Music Player.
 
