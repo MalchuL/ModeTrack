@@ -12,11 +12,12 @@ interface Toast {
   message: string;
   type: ToastType;
   duration?: number;
+  action?: React.ReactNode;
 }
 
 interface ToastStore {
   toasts: Toast[];
-  addToast: (toast: Omit<Toast, "id">) => void;
+  addToast: (toast: Omit<Toast, "id">) => string;
   removeToast: (id: string) => void;
 }
 
@@ -35,6 +36,7 @@ export const useToastStore = create<ToastStore>((set) => ({
         }));
       }, toast.duration || 3000);
     }
+    return id;
   },
   removeToast: (id) =>
     set((state) => ({
@@ -63,7 +65,14 @@ export function ToastContainer() {
             }
           )}
         >
-          <p className="text-sm font-medium">{toast.message}</p>
+          <div className="flex items-center gap-2 flex-1">
+            <p className="text-sm font-medium">{toast.message}</p>
+            {toast.action && (
+                <div className="ml-2">
+                    {toast.action}
+                </div>
+            )}
+          </div>
           <button
             onClick={() => removeToast(toast.id)}
             className="ml-4 text-muted-foreground hover:text-foreground"
@@ -76,14 +85,33 @@ export function ToastContainer() {
   );
 }
 
+export interface ToastActionProps {
+  altText: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}
+
+export function ToastAction({ altText, onClick, children }: ToastActionProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex h-8 items-center justify-center rounded-md border bg-transparent px-3 text-xs font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background"
+      title={altText}
+    >
+      {children}
+    </button>
+  );
+}
+
 export const toast = {
-  success: (message: string, duration?: number) =>
-    useToastStore.getState().addToast({ message, type: "success", duration }),
-  error: (message: string, duration?: number) =>
-    useToastStore.getState().addToast({ message, type: "error", duration }),
-  info: (message: string, duration?: number) =>
-    useToastStore.getState().addToast({ message, type: "info", duration }),
-  warning: (message: string, duration?: number) =>
-    useToastStore.getState().addToast({ message, type: "warning", duration }),
+  success: (message: string, duration?: number, action?: React.ReactNode) =>
+    useToastStore.getState().addToast({ message, type: "success", duration, action }),
+  error: (message: string, duration?: number, action?: React.ReactNode) =>
+    useToastStore.getState().addToast({ message, type: "error", duration, action }),
+  info: (message: string, duration?: number, action?: React.ReactNode) =>
+    useToastStore.getState().addToast({ message, type: "info", duration, action }),
+  warning: (message: string, duration?: number, action?: React.ReactNode) =>
+    useToastStore.getState().addToast({ message, type: "warning", duration, action }),
+  remove: (id: string) => useToastStore.getState().removeToast(id),
 };
 

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useUpdateTask, useDeleteTask } from "@/hooks/use-tasks";
 import { Input } from "@/components/ui/input";
+import { toast, ToastAction } from "@/components/ui/toast";
 
 interface TaskItemProps {
   task: Task;
@@ -133,17 +134,36 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
       if (task.updated_at !== prevUpdatedAt.current) {
           setIsUpdated(true);
           prevUpdatedAt.current = task.updated_at;
-          const timer = setTimeout(() => setIsUpdated(false), ANIMATION_DURATION);  // 150ms is the duration of the animation
+          const timer = setTimeout(() => setIsUpdated(false), ANIMATION_DURATION);
           return () => clearTimeout(timer);
       }
   }, [task.updated_at]);
 
 
   const handleToggleStatus = () => {
-    const newStatus =
-      task.status === TaskStatus.COMPLETED
-        ? TaskStatus.TODO
-        : TaskStatus.COMPLETED;
+    const isCompleting = task.status !== TaskStatus.COMPLETED;
+    const newStatus = isCompleting ? TaskStatus.COMPLETED : TaskStatus.TODO;
+
+    // Show toast immediately for clear feedback; still run mutation as usual.
+    let toastId: string | undefined;
+    if (isCompleting) {
+      toastId = toast.success(
+        `Task "${task.title}" completed`,
+        10000,
+        <ToastAction
+          altText="Undo"
+          onClick={() => {
+            updateTask.mutate({ id: task.id, status: TaskStatus.TODO });
+            if (toastId) {
+              toast.remove(toastId);
+            }
+          }}
+        >
+          Undo
+        </ToastAction>
+      );
+    }
+
     updateTask.mutate({ id: task.id, status: newStatus });
   };
   
