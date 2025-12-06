@@ -127,8 +127,21 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
             value={inputValue}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            className="h-9 pr-8"
+            className="h-9 pr-16"
           />
+          {inputValue && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setInputValue("");
+                handleChange("search", "");
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         
         <Select
