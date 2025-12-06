@@ -48,13 +48,6 @@ class TaskRepository(BaseRepository[Task]):
         if goal_id:
             query = query.filter(Task.goal_id == goal_id)
 
-        if search:
-            # Search in title or description
-            query = query.filter(
-                (Task.title.ilike(f"%{search}%")) | 
-                (Task.description.ilike(f"%{search}%"))
-            )
-            
         if start_date:
             query = query.filter(Task.due_date >= start_date)
             
@@ -66,11 +59,23 @@ class TaskRepository(BaseRepository[Task]):
             # Matches "tag" inside the JSON string representation
             query = query.filter(cast(Task.tags, String).like(f'%"{tag}"%'))
             
-        return query.all()
+        results = query.all()
+
+        if search:
+            s = search.lower()
+            results = [
+                t
+                for t in results
+                if (t.title and s in t.title.lower())
+                or (t.description and s in t.description.lower())
+                or any(s in (tag or "").lower() for tag in t.tags)
+            ]
+
+        return results
 
     def get_tasks_grouped_by_date(self, 
                                   start_date: Optional[datetime] = None, 
-                                  end_date: Optional[datetime] = None) -> Dict[date, List[Task]]:
+                                  end_date: Optional[datetime] = None) -> Dict[Optional[date], List[Task]]:
         """
         Get tasks grouped by their due date.
         Tasks without due dates are grouped under None.
@@ -83,7 +88,7 @@ class TaskRepository(BaseRepository[Task]):
             Dictionary mapping dates to lists of tasks
         """
         tasks = self.filter_tasks(start_date=start_date, end_date=end_date)
-        grouped: Dict[date, List[Task]] = defaultdict(list)
+        grouped: Dict[Optional[date], List[Task]] = defaultdict(list)
         
         for task in tasks:
             if task.due_date:

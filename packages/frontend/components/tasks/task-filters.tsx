@@ -42,7 +42,8 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
     let cleanTitle = input;
 
     // Parse Tags (# or №)
-    const tagRegex = /(?:^|\s)(#|№)([\w-]+)/g;
+    // Allow tags with any non-whitespace characters (incl. unicode), stopping at space
+    const tagRegex = /(?:^|\s)(#|№)([^\s#№]+)/gu;
     cleanTitle = cleanTitle.replace(tagRegex, (match, prefix, tag) => {
       tags.push(tag);
       return ""; // Remove tag from title
@@ -91,19 +92,30 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
   };
 
   // Highlight preview generation
-  const getHighlightedPreview = () => {
-    if (!inputValue) return null;
-    
-    const parts = inputValue.split(/(\s+)/);
+  const renderHighlighted = (text: string) => {
+    const parts = text.split(/(\s+)/);
     return parts.map((part, i) => {
-      if (part.match(/^(#|№)[\w-]+/)) {
-        return <span key={i} className="text-blue-500 font-medium">{part}</span>;
+      if (part.match(/^(#|№)[^\s#№]+/u)) {
+        return (
+          <span key={i} className="text-blue-500 font-medium">
+            {part}
+          </span>
+        );
       }
       if (part.match(/^!-?\d+/)) {
-        return <span key={i} className="text-orange-500 font-bold">{part}</span>;
+        return (
+          <span key={i} className="text-orange-500 font-bold">
+            {part}
+          </span>
+        );
       }
       return <span key={i}>{part}</span>;
     });
+  };
+
+  const getHighlightedPreview = () => {
+    if (!inputValue) return null;
+    return renderHighlighted(inputValue);
   };
 
   return (
@@ -157,8 +169,13 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
       
       {/* Parsing Preview Feedback */}
       {inputValue && (
-        <div className="text-xs text-muted-foreground pl-1 h-4 flex gap-1">
-           {getHighlightedPreview()}
+        <div className="space-y-1 pl-1">
+          <div className="text-xs text-muted-foreground h-4 flex gap-1">
+             {getHighlightedPreview()}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Press Enter to create task: {renderHighlighted(inputValue)}
+          </div>
         </div>
       )}
     </div>
