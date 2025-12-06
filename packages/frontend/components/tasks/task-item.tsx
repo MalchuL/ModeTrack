@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { format, isBefore, isToday, startOfDay } from "date-fns";
-import { CheckCircle2, Circle, Clock, Tag, Trash2, AlertCircle, Check, X } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Tag, Trash2, AlertCircle, Check, X, AlignLeft, Edit3 } from "lucide-react";
 import { Task, TaskPriority, TaskStatus } from "@/types/task";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ function InlineEdit({
       if (e.relatedTarget && (e.currentTarget.contains(e.relatedTarget as Node))) {
           return;
       }
+      // Auto-save on blur for all types
       onSave(value);
   };
 
@@ -65,7 +66,9 @@ function InlineEdit({
                 setValue(e.target.value);
                 onSave(e.target.value);
             }}
+            // Auto-focus/open logic is tricky with native select, but this renders an openable select
             className="h-8 w-[120px] text-xs"
+            autoFocus
         >
             <option value={TaskPriority.LOW}>Low</option>
             <option value={TaskPriority.MEDIUM}>Medium</option>
@@ -145,6 +148,11 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
          updateTask.mutate({ id: task.id, [field]: newValue });
       }
   };
+
+  const handleAddDescription = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateTask.mutate({ id: task.id, description: "Description" });
+  }
 
   const priorityColor = {
     [TaskPriority.LOW]: "text-blue-600",
@@ -286,9 +294,24 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
     </div>
   );
 
+  // Description Badge (Add Description)
+  const DescriptionBadge = !task.description && (
+      <div 
+        key="description"
+        className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-dashed border-muted-foreground/30 bg-transparent text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-secondary hover:border-solid"
+        onClick={handleAddDescription}
+        title="Add description"
+      >
+          <AlignLeft className="h-3 w-3" />
+          <span>Add Description</span>
+      </div>
+  );
+
+
   // Order: 
   // 1. Set properties: Status, Due Date, Priority, Tags
   // 2. Unset properties: Due Date, Tags (Priority is always set)
+  // 3. Description badge (last if unset)
   
   const setBadges = [];
   const unsetBadges = [];
@@ -302,6 +325,8 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
 
   if (task.tags.length > 0) setBadges.push(TagsBadge);
   else unsetBadges.push(TagsBadge);
+  
+  if (DescriptionBadge) unsetBadges.push(DescriptionBadge);
 
   return (
     <div
@@ -331,7 +356,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
           {/* Title: w-fit to allow clicking on the side */}
           <h3
             className={cn(
-              "font-medium leading-none -ml-1 px-1 rounded outline-none focus:bg-background focus:ring-1 focus:ring-ring min-h-[1.25rem] cursor-text w-fit max-w-[calc(100%-4rem)]",
+              "font-medium leading-none -ml-1 px-1 rounded outline-none focus:bg-background focus:ring-1 focus:ring-ring min-h-[1.25rem] cursor-text w-fit max-w-[calc(100%-6rem)]", // Increased gap for buttons
               isCompleted && "line-through text-muted-foreground"
             )}
             contentEditable={!isCompleted}
@@ -345,6 +370,18 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
           
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-auto">
              {/* Actions pushed to right */}
+             <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(task);
+                }}
+                title="Open Full Editor"
+            >
+                <Edit3 className="h-4 w-4" />
+            </Button>
             <Button
                 variant="ghost"
                 size="icon"
