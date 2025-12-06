@@ -3,96 +3,143 @@
 @tailwind utilities;
 
 :root {
-  --background: #0c0a13;
-  --foreground: #e9e6f5;
+  --background: #0d050f;
+  --foreground: #fffaf7;
 
-  --primary: #b39cfb;
-  --primary-foreground: #0c0a13;
+  --primary: #ff5f9c;
+  --primary-foreground: #1c0710;
 
-  --secondary: #151024;
-  --secondary-foreground: #e9e6f5;
+  --secondary: #160b1a;
+  --secondary-foreground: #fff7ff;
 
-  --muted: #181228;
-  --muted-foreground: #b5a6d6;
+  --muted: #261426;
+  --muted-foreground: #f0e0f3;
 
-  --accent: #a78bfa;
-  --accent-foreground: #0c0a13;
+  --accent: #ff9c4f;
+  --accent-foreground: #180908;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #f9fafb;
+  --destructive: #f47272;
+  --destructive-foreground: #fffaf7;
 
-  --card: rgba(255, 255, 255, 0.07);
-  --card-foreground: #e9e6f5;
+  --card: rgba(255, 255, 255, 0.28);
+  --card-foreground: #fffaf7;
 
-  --border: rgba(255, 255, 255, 0.12);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #b39cfb;
+  --border: rgba(255, 255, 255, 0.34);
+  --input: rgba(255, 255, 255, 0.3);
+  --ring: #ff7fb1;
 
   /* Glass tokens */
-  --surface-start: rgba(255, 255, 255, 0.1);
-  --surface-end: rgba(255, 255, 255, 0.04);
-  --surface-base: rgba(255, 255, 255, 0.05);
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.3);
-  --shadow-raised: 0 18px 48px rgba(0, 0, 0, 0.4);
-  --shadow-strong: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --glow: 0 0 0 4px rgba(167, 139, 250, 0.35);
+  --surface-start: rgba(255, 255, 255, 0.28);
+  --surface-end: rgba(255, 255, 255, 0.14);
+  --surface-base: rgba(255, 255, 255, 0.2);
+  --shadow-soft: 0 14px 34px rgba(30, 6, 24, 0.4);
+  --shadow-raised: 0 20px 52px rgba(24, 4, 20, 0.5);
+  --shadow-strong: 0 28px 74px rgba(18, 3, 18, 0.6);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --glow: 0 0 0 4px rgba(255, 126, 160, 0.44);
   --radius-lg: 16px;
   --radius-md: 12px;
 
+  /* Background motion */
+  --bg-wander: 100.35; /* Increase to amplify corner drift */
+
   /* Task state surfaces */
-  --task-surface-overdue: linear-gradient(145deg, rgba(255, 120, 120, 0.18), rgba(255, 90, 90, 0.12));
-  --task-surface-progress: linear-gradient(145deg, rgba(120, 180, 255, 0.18), rgba(80, 140, 220, 0.12));
-  --task-surface-updated: linear-gradient(145deg, rgba(177, 151, 255, 0.26), rgba(147, 115, 245, 0.18));
+  --task-surface-overdue: linear-gradient(145deg, rgba(255, 140, 118, 0.36), rgba(255, 92, 92, 0.2));
+  --task-surface-progress: linear-gradient(145deg, rgba(168, 226, 255, 0.3), rgba(108, 174, 255, 0.22));
+  --task-surface-updated: linear-gradient(145deg, rgba(255, 210, 200, 0.34), rgba(230, 178, 255, 0.26));
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0a13;
-    --foreground: #e9e6f5;
+    --background: #0d050f;
+    --foreground: #fffaf7;
 
-    --primary: #b39cfb;
-    --primary-foreground: #0c0a13;
+    --primary: #ff5f9c;
+    --primary-foreground: #1c0710;
 
-    --secondary: #151024;
-    --secondary-foreground: #e9e6f5;
+    --secondary: #160b1a;
+    --secondary-foreground: #fff7ff;
 
-    --muted: #181228;
-    --muted-foreground: #b5a6d6;
+    --muted: #261426;
+    --muted-foreground: #f0e0f3;
 
-    --accent: #a78bfa;
-    --accent-foreground: #0c0a13;
+    --accent: #ff9c4f;
+    --accent-foreground: #180908;
 
-    --destructive: #ef4444;
-    --destructive-foreground: #f9fafb;
+    --destructive: #f47272;
+    --destructive-foreground: #fffaf7;
 
-    --card: rgba(255, 255, 255, 0.07);
-    --card-foreground: #e9e6f5;
+    --card: rgba(255, 255, 255, 0.28);
+    --card-foreground: #fffaf7;
 
-    --border: rgba(255, 255, 255, 0.12);
-    --input: rgba(255, 255, 255, 0.12);
-    --ring: #b39cfb;
+    --border: rgba(255, 255, 255, 0.34);
+    --input: rgba(255, 255, 255, 0.3);
+    --ring: #ff7fb1;
 
-    --surface-start: rgba(255, 255, 255, 0.1);
-    --surface-end: rgba(255, 255, 255, 0.04);
-    --surface-base: rgba(255, 255, 255, 0.05);
-    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.3);
-    --shadow-raised: 0 18px 48px rgba(0, 0, 0, 0.4);
-    --shadow-strong: 0 24px 64px rgba(0, 0, 0, 0.5);
-    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    --glow: 0 0 0 4px rgba(167, 139, 250, 0.35);
+    --surface-start: rgba(255, 255, 255, 0.28);
+    --surface-end: rgba(255, 255, 255, 0.14);
+    --surface-base: rgba(255, 255, 255, 0.2);
+    --shadow-soft: 0 14px 34px rgba(30, 6, 24, 0.4);
+    --shadow-raised: 0 20px 52px rgba(24, 4, 20, 0.5);
+    --shadow-strong: 0 28px 74px rgba(18, 3, 18, 0.6);
+    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    --glow: 0 0 0 4px rgba(255, 126, 160, 0.44);
+    --bg-wander: 1.35;
   }
 }
 
 body {
   color: var(--foreground);
-  background:
-    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 35%),
-    radial-gradient(circle at 80% 10%, rgba(167, 139, 250, 0.08) 0%, rgba(167, 139, 250, 0) 45%),
-    linear-gradient(145deg, #0d0a13 0%, #0f0b18 50%, #0b0912 100%);
+  background-color: var(--background);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
   padding-bottom: 80px; /* For Player */
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -12%;
+  z-index: -1;
+  background:
+    radial-gradient(60vw 60vw at 0% 8%, rgba(255, 140, 100, 1), rgba(255, 140, 100, 0) 70%),
+    radial-gradient(60vw 60vw at 100% 6%, rgba(255, 206, 120, 0.98), rgba(255, 206, 120, 0) 70%),
+    radial-gradient(62vw 62vw at 0% 94%, rgba(255, 124, 174, 0.94), rgba(255, 124, 174, 0) 72%),
+    radial-gradient(62vw 62vw at 100% 94%, rgba(210, 132, 255, 0.9), rgba(210, 132, 255, 0) 70%),
+    radial-gradient(40vw 40vw at 28% 22%, rgba(255, 186, 140, 0.78), rgba(255, 186, 140, 0) 68%),
+    radial-gradient(66vw 66vw at 50% 50%, rgba(255, 172, 126, 0.42), rgba(255, 172, 126, 0) 74%);
+  background-size: 100% 100%;
+  background-position:
+    calc(-6% * var(--bg-wander)) calc(4% * var(--bg-wander)),
+    calc(96% * var(--bg-wander)) calc(2% * var(--bg-wander)),
+    calc(8% * var(--bg-wander)) calc(90% * var(--bg-wander)),
+    calc(94% * var(--bg-wander)) calc(96% * var(--bg-wander)),
+    calc(28% * var(--bg-wander)) calc(22% * var(--bg-wander)),
+    calc(48% * var(--bg-wander)) calc(50% * var(--bg-wander));
+  background-repeat: no-repeat;
+  filter: blur(clamp(8px, 1vw, 14px));
+  opacity: 1;
+  mix-blend-mode: screen;
+  animation: none;
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+@keyframes gradientFloat {
+  0% {
+    background-position: -6% 4%, 96% 2%, 8% 90%, 94% 96%, 48% 50%;
+    transform: translate3d(0, 0, 0) scale(1.01);
+  }
+  50% {
+    background-position: -2% 6%, 94% 6%, 12% 86%, 90% 92%, 50% 48%;
+    transform: translate3d(calc(-12px * var(--bg-wander)), calc(-10px * var(--bg-wander)), 0) scale(1.02);
+  }
+  100% {
+    background-position: -4% 10%, 98% 4%, 6% 94%, 96% 90%, 52% 52%;
+    transform: translate3d(calc(14px * var(--bg-wander)), calc(10px * var(--bg-wander)), 0) scale(1.018);
+  }
 }
 
 @layer utilities {
@@ -144,7 +191,7 @@ body {
 
 .glass-overlay {
   backdrop-filter: blur(14px);
-  background: rgba(12, 17, 35, 0.45);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* Native selects/options to avoid white dropdowns */
@@ -160,7 +207,7 @@ optgroup {
 }
 
 ::selection {
-  background: rgba(167, 139, 250, 0.28);
+  background: rgba(255, 154, 200, 0.28);
   color: var(--foreground);
 }
 
