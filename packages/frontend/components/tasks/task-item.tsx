@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useUpdateTask, useDeleteTask } from "@/hooks/use-tasks";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 
 interface TaskItemProps {
   task: Task;
@@ -29,12 +28,20 @@ function InlineEdit({
 }) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, []);
+    if (selectRef.current && type === "select") {
+        // Simulate click to open (not fully possible in all browsers via JS)
+        // Or just focus
+        selectRef.current.focus();
+        // Native select cannot be forced open via JS easily. 
+        // But focus helps keyboard navigation.
+    }
+  }, [type]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -60,21 +67,22 @@ function InlineEdit({
         tabIndex={-1}
     >
       {type === "select" ? (
-        <Select 
+        <select
+            ref={selectRef}
             value={value} 
             onChange={(e) => {
                 setValue(e.target.value);
                 onSave(e.target.value);
             }}
-            // Auto-focus/open logic is tricky with native select, but this renders an openable select
-            className="h-8 w-[120px] text-xs"
+            // Using standard HTML select for better direct behavior
+            className="h-8 w-[120px] text-xs bg-transparent border rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
         >
             <option value={TaskPriority.LOW}>Low</option>
             <option value={TaskPriority.MEDIUM}>Medium</option>
             <option value={TaskPriority.HIGH}>High</option>
             <option value={TaskPriority.URGENT}>Urgent</option>
-        </Select>
+        </select>
       ) : (
         <Input 
             ref={inputRef}
