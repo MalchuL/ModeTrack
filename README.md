@@ -32,10 +32,11 @@ A comprehensive productivity application combining Task Management, 12-Week Year
 ### Quick Start (Docker)
 
 1. Clone the repository.
-2. Run with Docker Compose:
+2. Run with Docker Compose (v2 syntax preferred):
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
+   If you only have the legacy `docker-compose` (v1) binary, use that instead, but see the troubleshooting note below about the `ContainerConfig` error.
 3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 4. The API docs are available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
@@ -77,7 +78,13 @@ For testing purposes or local development, you can run the backend and frontend 
 
 #### Troubleshooting
 
-- **Port Conflicts**: Ensure ports 3000 (frontend) and 8000 (backend) are free.
+- **Port Conflicts**: Ensure ports 3000 (frontend) and 8000 (backend) are free. Stop any process using these ports before `docker compose up`.
+- **ContainerConfig error (legacy docker-compose v1)**: If you see `KeyError: 'ContainerConfig'` while recreating containers, remove old containers and rerun, or switch to the newer CLI:  
+  ```bash
+  docker compose down --remove-orphans
+  docker compose up --build
+  ```  
+  With legacy v1: `docker rm -f productivity-frontend productivity-backend && docker-compose up --build`.
 - **Database**: If you encounter database errors, you can delete the `packages/backend/data/productivity.db` file to reset the database. It will be recreated on the next backend startup.
 
 ## Architecture
