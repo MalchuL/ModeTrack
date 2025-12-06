@@ -3,9 +3,8 @@ import { TaskFilters as ITaskFilters, TaskPriority, TaskStatus } from "@/types/t
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { X, Plus } from "lucide-react";
+import { X } from "lucide-react";
 import { useCreateTask } from "@/hooks/use-tasks";
-import { cn } from "@/lib/utils";
 
 interface TaskFiltersProps {
   filters: ITaskFilters;
@@ -49,19 +48,19 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
       return ""; // Remove tag from title
     });
 
-    // Parse Priority (@1-4 or *1-4)
+    // Parse Priority (!1-4 or !number)
     // 1: Low, 2: Medium, 3: High, 4: Urgent
-    const priorityRegex = /(?:^|\s)(?:@|\*)(\d)/;
+    // Clamping: <=0 -> Low, >=5 -> Urgent
+    const priorityRegex = /(?:^|\s)!(-?\d+)/;
     const priorityMatch = cleanTitle.match(priorityRegex);
     if (priorityMatch) {
       const pLevel = parseInt(priorityMatch[1]);
-      switch (pLevel) {
-        case 1: priority = TaskPriority.LOW; break;
-        case 2: priority = TaskPriority.MEDIUM; break;
-        case 3: priority = TaskPriority.HIGH; break;
-        case 4: priority = TaskPriority.URGENT; break;
-        default: priority = TaskPriority.MEDIUM;
-      }
+      
+      if (pLevel <= 1) priority = TaskPriority.LOW; // <=1 to allow !1 as Low, and !0
+      else if (pLevel === 2) priority = TaskPriority.MEDIUM;
+      else if (pLevel === 3) priority = TaskPriority.HIGH;
+      else if (pLevel >= 4) priority = TaskPriority.URGENT; // >=4 to allow !4 as Urgent, and !5
+      
       cleanTitle = cleanTitle.replace(priorityRegex, "");
     }
 
@@ -100,7 +99,7 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
       if (part.match(/^(#|№)[\w-]+/)) {
         return <span key={i} className="text-blue-500 font-medium">{part}</span>;
       }
-      if (part.match(/^(?:@|\*)\d/)) {
+      if (part.match(/^!-?\d+/)) {
         return <span key={i} className="text-orange-500 font-bold">{part}</span>;
       }
       return <span key={i}>{part}</span>;
@@ -112,14 +111,12 @@ export function TaskFilters({ filters, onFilterChange }: TaskFiltersProps) {
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1 min-w-[200px] relative group">
           <Input
-            placeholder="Search tasks or add new (e.g. 'Buy milk #personal @4' + Enter)"
+            placeholder="Search tasks or add new (e.g. 'Buy milk #personal !4' + Enter)"
             value={inputValue}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
             className="h-9 pr-8"
           />
-          {/* Highlight Overlay - simplified as visual feedback below input for now to avoid alignment issues */}
-          {/* Ideally this would be a contentEditable div replacing Input, but keeping Input for functionality is safer */}
         </div>
         
         <Select

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { X } from "lucide-react";
 import { Task, TaskCreate, TaskPriority, TaskStatus } from "@/types/task";
 import { useCreateTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useCycles, useGoals } from "@/hooks/use-cycles";
@@ -43,6 +44,8 @@ export function TaskEditor({ isOpen, onClose, task }: TaskEditorProps) {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -51,6 +54,8 @@ export function TaskEditor({ isOpen, onClose, task }: TaskEditorProps) {
       status: TaskStatus.TODO,
     },
   });
+
+  const dueDate = watch("due_date");
 
   useEffect(() => {
     if (isOpen) {
@@ -83,21 +88,23 @@ export function TaskEditor({ isOpen, onClose, task }: TaskEditorProps) {
       ? data.tags.split(",").map((t) => t.trim()).filter(Boolean)
       : [];
 
-    const payload: TaskCreate = {
+    const payload = {
       title: data.title,
       description: data.description,
       priority: data.priority,
       status: data.status,
-      due_date: data.due_date || undefined,
+      due_date: data.due_date || null,
       tags,
-      goal_id: data.goal_id || undefined,
+      goal_id: data.goal_id || null,
     };
 
     try {
       if (task) {
         await updateTask.mutateAsync({ id: task.id, ...payload });
       } else {
-        await createTask.mutateAsync(payload);
+        // For create, null or undefined is fine, but let's respect the type if possible
+        // We can just cast payload to unknown then TaskCreate if needed, or relying on structural compatibility
+        await createTask.mutateAsync(payload as any);
       }
       onClose();
     } catch (error) {
@@ -157,7 +164,20 @@ export function TaskEditor({ isOpen, onClose, task }: TaskEditorProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Due Date</label>
-            <Input type="date" {...register("due_date")} />
+            <div className="flex gap-2">
+              <Input type="date" {...register("due_date")} />
+              {dueDate && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setValue("due_date", "", { shouldValidate: true, shouldDirty: true })}
+                  title="Clear Date"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -20,6 +20,7 @@ def list_tasks(
     priority: Optional[TaskPriority] = None,
     goal_id: Optional[int] = None,
     tag: Optional[str] = None,
+    search: Optional[str] = None,
 ) -> Any:
     """
     Retrieve tasks.
@@ -31,7 +32,8 @@ def list_tasks(
         status=status, 
         priority=priority, 
         goal_id=goal_id, 
-        tag=tag
+        tag=tag,
+        search=search
     )
 
 

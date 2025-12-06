@@ -29,13 +29,14 @@ class TaskService:
                    priority: Optional[TaskPriority] = None, 
                    goal_id: Optional[int] = None, 
                    tag: Optional[str] = None,
+                   search: Optional[str] = None,
                    start_date: Optional[datetime] = None,
                    end_date: Optional[datetime] = None) -> List[Task]:
         """
         List tasks with filtering options.
         """
         # Use specific filter method if filters are present, otherwise generic get_all
-        if any([status, priority, goal_id, tag, start_date, end_date]):
+        if any([status, priority, goal_id, tag, search, start_date, end_date]):
             # Filter logic is in repository
             # We might want to handle pagination manually if the repository method doesn't support it directly
             # The current filter_tasks returns all matches. For a personal app, this is likely fine.
@@ -45,6 +46,7 @@ class TaskService:
                 priority=priority, 
                 goal_id=goal_id, 
                 tag=tag,
+                search=search,
                 start_date=start_date,
                 end_date=end_date
             )

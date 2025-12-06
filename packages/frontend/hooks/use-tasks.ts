@@ -19,6 +19,7 @@ const fetchTasks = async (filters?: TaskFilters) => {
   if (filters?.priority) params.append("priority", filters.priority);
   if (filters?.goal_id) params.append("goal_id", filters.goal_id.toString());
   if (filters?.tag) params.append("tag", filters.tag);
+  if (filters?.search) params.append("search", filters.search);
   
   const { data } = await api.get<Task[]>("/tasks", { params });
   return data;

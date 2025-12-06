@@ -19,6 +19,7 @@ class TaskRepository(BaseRepository[Task]):
                      priority: Optional[TaskPriority] = None, 
                      goal_id: Optional[int] = None, 
                      tag: Optional[str] = None,
+                     search: Optional[str] = None,
                      start_date: Optional[datetime] = None,
                      end_date: Optional[datetime] = None) -> List[Task]:
         """
@@ -29,6 +30,7 @@ class TaskRepository(BaseRepository[Task]):
             priority: Filter by task priority
             goal_id: Filter by associated goal
             tag: Filter by tag presence
+            search: Search text in title or description
             start_date: Filter by due date range start
             end_date: Filter by due date range end
             
@@ -45,6 +47,13 @@ class TaskRepository(BaseRepository[Task]):
             
         if goal_id:
             query = query.filter(Task.goal_id == goal_id)
+
+        if search:
+            # Search in title or description
+            query = query.filter(
+                (Task.title.ilike(f"%{search}%")) | 
+                (Task.description.ilike(f"%{search}%"))
+            )
             
         if start_date:
             query = query.filter(Task.due_date >= start_date)

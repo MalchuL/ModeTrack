@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
-import { Task, TaskFilters as ITaskFilters } from "@/types/task";
+import { Task, TaskFilters as ITaskFilters, TaskStatus, TaskPriority } from "@/types/task";
 import { useTasks } from "@/hooks/use-tasks";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -30,6 +30,58 @@ export function TaskList() {
     setEditingTask(undefined);
   };
 
+  // Client-side sorting and filtering
+  const processedTasks = useMemo(() => {
+    if (!tasks) return [];
+
+    // 1. Filter completed by default if no status filter is set
+    let filtered = tasks;
+    if (!filters.status) {
+        filtered = tasks.filter(t => t.status !== TaskStatus.COMPLETED);
+    }
+
+    // 2. Sort order:
+    // Group 1: In Progress, Todo (Priority: In Progress > Todo)
+    // Group 2: Completed (if shown)
+    // Within Groups: Due Date (asc) > Priority (Urgent->Low)
+    
+    const priorityWeight = {
+        [TaskPriority.URGENT]: 4,
+        [TaskPriority.HIGH]: 3,
+        [TaskPriority.MEDIUM]: 2,
+        [TaskPriority.LOW]: 1,
+    };
+
+    const statusWeight = {
+        [TaskStatus.IN_PROGRESS]: 2,
+        [TaskStatus.TODO]: 1,
+        [TaskStatus.COMPLETED]: 0,
+    };
+
+    return filtered.sort((a, b) => {
+        // Status Group (In Progress/Todo vs Completed handled by weight)
+        // Actually user wants: In progress > Todo > Completed (implied by "After this shows Todo")
+        // Wait, prompt says: "In progress, Due Date, Priority. After this shows Todo status, Due Date, Priority"
+        // This implies strict grouping by status first.
+        
+        if (statusWeight[a.status] !== statusWeight[b.status]) {
+            return statusWeight[b.status] - statusWeight[a.status]; // Higher weight first
+        }
+
+        // Due Date (Ascending, nulls last)
+        const dateA = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+        const dateB = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+        
+        if (dateA !== dateB) {
+            return dateA - dateB;
+        }
+
+        // Priority (Desc)
+        return priorityWeight[b.priority] - priorityWeight[a.priority];
+    });
+
+  }, [tasks, filters.status]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -50,7 +102,7 @@ export function TaskList() {
         <div className="text-center text-destructive py-8">
           Error loading tasks. Please try again.
         </div>
-      ) : tasks?.length === 0 ? (
+      ) : processedTasks.length === 0 ? (
         <div className="text-center py-12 border rounded-lg bg-muted/10">
           <p className="text-muted-foreground">No tasks found.</p>
           <Button variant="link" onClick={handleCreate}>
@@ -59,7 +111,7 @@ export function TaskList() {
         </div>
       ) : (
         <div className="grid gap-3">
-          {tasks?.map((task) => (
+          {processedTasks.map((task) => (
             <TaskItem key={task.id} task={task} onEdit={handleEdit} />
           ))}
         </div>
@@ -73,4 +125,3 @@ export function TaskList() {
     </div>
   );
 }
-

@@ -13,8 +13,21 @@
     - Maintain manual override for day tracking (past days)
     - _Requirements: Enhancement 1_
 
-  - [x] 14.3 Implement Local Music Folder Config
-    - Add configuration setting for local music folder path
-    - Implement backend logic to scan folder for audio files
-    - Add API endpoint to sync/list files from configured folder
-    - _Requirements: Enhancement 2_
+  - [x] 14.4 Refactor Task Management
+    - Change priority shortcut to '!' (e.g., "!1", "!4")
+    - Clamp priority input (<=0 -> Low, >=5 -> Urgent)
+    - Support '№' as alias for '#' for tags
+    - Update default filter to hide completed tasks
+    - Update sort order: In Progress > Todo, then Due Date, then Priority
+    - Add visual urgency: Soft red background for overdue/due today tasks
+    - Improve UI: Wrap priority/due date badges in white bg/black border for contrast
+    - _Requirements: Refactoring Request_
+
+  - [x] 14.5 Interactive Task Badges
+    - Add status badge (TODO/In Progress) next to metadata
+    - Implement click-to-toggle status on the badge
+    - Hide status badge if completed
+    - Make Priority, Due Date, and Tag badges editable inline
+    - Show tooltip/input on click, save on Enter, cancel on Esc/blur
+    - Fix "Clear" button in Due Date picker
+    - _Requirements: Interactive UI Request_
