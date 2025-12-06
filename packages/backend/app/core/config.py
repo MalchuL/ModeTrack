@@ -28,6 +28,9 @@ class Settings(BaseSettings):
 
     # Paths
     data_dir: Path = Path("./data")
+    
+    # Music
+    music_dir: Optional[Path] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

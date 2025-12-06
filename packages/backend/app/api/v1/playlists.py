@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -25,6 +25,17 @@ def list_playlists(
     """
     service = PlaylistService(db)
     return service.list_playlists()
+
+
+@router.get("/local", response_model=List[Dict[str, str]])
+def list_local_tracks(
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    List available audio tracks in the configured local music directory.
+    """
+    service = PlaylistService(db)
+    return service.list_local_tracks()
 
 
 @router.get("/context/{context}", response_model=PlaylistResponse)
@@ -93,4 +104,3 @@ def reorder_track(
     """
     service = PlaylistService(db)
     return service.reorder_track(id, reorder_in)
-

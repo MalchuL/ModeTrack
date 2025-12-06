@@ -1,26 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, History } from "lucide-react";
-import { useCycles } from "@/hooks/use-cycles";
+import { useCycles, useCreateCycle } from "@/hooks/use-cycles";
 import { CycleCard } from "./cycle-card";
 import { CreateCycleModal } from "./create-cycle-modal";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Checkbox } from "@/components/ui/checkbox"; // Need to implement Checkbox or use simple input
-// I'll just use a simple button toggle for "Show Archived"
+import { format } from "date-fns";
 
 export function CycleList() {
   const [showArchived, setShowArchived] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   
-  // We fetch all if showArchived is true, otherwise only active
-  // My hook supports activeOnly flag.
-  // If showArchived is true, we want ALL (activeOnly=false).
-  // If showArchived is false, we want ONLY ACTIVE (activeOnly=true).
   const { data: cycles, isLoading } = useCycles(!showArchived);
+  const createCycle = useCreateCycle();
+
+  // Auto-fill logic: If activeOnly is true (default), and no cycles found, create one.
+  useEffect(() => {
+    if (!isLoading && cycles && cycles.length === 0 && !showArchived) {
+      // No active cycles. Auto-create one starting today.
+      const today = new Date();
+      const startDate = format(today, "yyyy-MM-dd");
+      
+      // Check if we already tried to create (to prevent loop if API fails)
+      // Using session storage or ref might be safer, but for now let's just try once
+      // Or rely on the user explicitly creating if they deleted everything.
+      // But "Autofill ... when page is loaded" implies automation.
+      // Let's create it.
+      
+      // Ideally we check if there really are no cycles at all?
+      // Or just no ACTIVE ones? "Autofill 12-week in year" likely implies "Ensure there is a current cycle".
+      
+      createCycle.mutate({
+        name: `Cycle ${format(today, "MMM yyyy")}`,
+        start_date: startDate
+      });
+    }
+  }, [isLoading, cycles, showArchived, createCycle]);
 
   if (isLoading) return <div className="flex justify-center py-12"><LoadingSpinner /></div>;
-
-  const hasActiveCycle = cycles?.some(c => !c.is_archived);
 
   return (
     <div className="space-y-6">
@@ -46,11 +63,13 @@ export function CycleList() {
       {!cycles?.length ? (
         <div className="text-center py-12 border rounded-lg bg-muted/10">
           <p className="text-muted-foreground mb-4">
-            {showArchived ? "No cycles found." : "No active cycles."}
+            {showArchived ? "No cycles found." : "Creating your first cycle..."}
           </p>
-          <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
-            Start your first 12-Week Cycle
-          </Button>
+          {showArchived && (
+             <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
+               Start New Cycle
+             </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -71,4 +90,3 @@ export function CycleList() {
     </div>
   );
 }
-

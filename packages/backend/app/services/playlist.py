@@ -1,8 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+import os
+from pathlib import Path
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.playlist import Playlist, AudioTrack, PlaylistContext
 from app.repositories.playlist import PlaylistRepository, AudioTrackRepository
 from app.schemas.playlist import AudioTrackCreate, PlaylistCreate, TrackReorder
@@ -59,3 +62,46 @@ class PlaylistService:
         self.track_repo.reorder_tracks(playlist_id, reorder_data.track_id, reorder_data.new_position)
         return True
 
+    def list_local_tracks(self) -> List[Dict[str, str]]:
+        """
+        Scan configured music directory for audio files.
+        Returns list of {title: str, file_path: str}
+        """
+        if not settings.music_dir:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Music directory not configured"
+            )
+            
+        music_path = Path(settings.music_dir)
+        if not music_path.exists() or not music_path.is_dir():
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Music directory {music_path} does not exist"
+            )
+
+        tracks = []
+        extensions = {".mp3", ".wav", ".ogg", ".m4a", ".flac"}
+        
+        for root, _, files in os.walk(music_path):
+            for file in files:
+                if Path(file).suffix.lower() in extensions:
+                    full_path = Path(root) / file
+                    # We need a way to serve these files. 
+                    # For now, we assume the frontend can access them via file:// if local (electron style)
+                    # OR we need a static file server.
+                    # Since this is a web app, browsers block file:// access.
+                    # So we should probably expose them via an API endpoint or static mount.
+                    # Let's return the absolute path for now, assuming user might run this locally.
+                    # BUT browsers won't play absolute paths.
+                    # We should map this to a static URL if possible.
+                    # For MVP, let's just list them. 
+                    # Or better, we add a /stream endpoint?
+                    # Let's stick to returning the path and the filename as title.
+                    
+                    tracks.append({
+                        "title": file,
+                        "file_path": str(full_path.absolute())
+                    })
+                    
+        return sorted(tracks, key=lambda x: x["title"])
