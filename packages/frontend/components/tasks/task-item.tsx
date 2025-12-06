@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { memo, useState, useRef, useEffect } from "react";
 import { format, isBefore, isToday, startOfDay } from "date-fns";
-import { CheckCircle2, Circle, Clock, Tag, Trash2, AlertCircle, Check, X, AlignLeft, Edit3 } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Tag, Trash2, AlertCircle, Check, X, AlignLeft, Edit3, GripVertical } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Task, TaskPriority, TaskStatus } from "@/types/task";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -121,12 +123,26 @@ function InlineEdit({
 
 const ANIMATION_DURATION = 150;
 
-export function TaskItem({ task, onEdit }: TaskItemProps) {
+export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   
   const [editingField, setEditingField] = useState<"priority" | "date" | "tags" | null>(null);
   const [isUpdated, setIsUpdated] = useState(false);
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    transition: {
+      duration: 150,
+      easing: "ease",
+    },
+  });
+
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? "transform 0s" : transition,
+    willChange: isDragging ? "transform" : undefined,
+  };
 
   const prevUpdatedAt = useRef(task.updated_at);
   
@@ -361,11 +377,14 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
 
   return (
     <div
+      ref={setNodeRef}
+      style={dragStyle}
       className={cn(
-        "group flex items-start gap-3 p-4 rounded-lg border transition-all relative overflow-visible",
+        "group flex items-start gap-3 p-4 rounded-lg border transition-colors relative overflow-visible",
         // Duration reduced to 150ms for faster feedback, or removed for instant
         isUpdated && "duration-0", // Instant on
         !isUpdated && "duration-700", // Slow off
+        isDragging && "shadow-lg ring-2 ring-primary/50 cursor-grabbing",
         
         isCompleted 
             ? "opacity-60 bg-muted/50 border-transparent" 
@@ -382,6 +401,15 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
       )}
       onClick={() => onEdit(task)}
     >
+      <button
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+        className="mt-1 text-muted-foreground hover:text-primary transition-colors z-10 flex-shrink-0 cursor-grab active:cursor-grabbing"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -457,4 +485,4 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
       </div>
     </div>
   );
-}
+});

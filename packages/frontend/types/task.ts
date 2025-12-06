@@ -18,6 +18,7 @@ export interface Task {
   priority: TaskPriority;
   status: TaskStatus;
   due_date?: string; // ISO string
+  position?: number | null;
   tags: string[];
   goal_id?: number;
   created_at: string;
@@ -30,6 +31,7 @@ export interface TaskCreate {
   priority?: TaskPriority;
   status?: TaskStatus;
   due_date?: string;
+  position?: number | null;
   tags?: string[];
   goal_id?: number;
 }
@@ -40,6 +42,7 @@ export interface TaskUpdate {
   priority?: TaskPriority;
   status?: TaskStatus;
   due_date?: string | null; // Allow clearing date
+  position?: number | null;
   tags?: string[];
   goal_id?: number | null;
 }

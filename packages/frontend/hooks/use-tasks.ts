@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Task, TaskCreate, TaskUpdate, TaskFilters } from "@/types/task";
+import { Task, TaskCreate, TaskUpdate, TaskFilters, TaskStatus } from "@/types/task";
 import { toast } from "@/components/ui/toast";
 
 // Keys
@@ -42,6 +42,14 @@ const updateTask = async ({ id, ...task }: TaskUpdate & { id: number }) => {
 
 const deleteTask = async (id: number) => {
   const { data } = await api.delete<boolean>(`/tasks/${id}`);
+  return data;
+};
+
+const reorderTasks = async (status: TaskStatus, orderedIds: number[]) => {
+  const { data } = await api.put<Task[]>(`/tasks/reorder`, {
+    status,
+    ordered_ids: orderedIds,
+  });
   return data;
 };
 
@@ -136,6 +144,49 @@ export function useDeleteTask() {
     },
     onError: () => {
       toast.error("Failed to delete task");
+    },
+  });
+}
+
+export function useReorderTasks() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ status, orderedIds }: { status: TaskStatus; orderedIds: number[] }) =>
+      reorderTasks(status, orderedIds),
+    onMutate: async ({ status, orderedIds }) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.all });
+
+      const previousTasks = queryClient.getQueryData<Task[]>(taskKeys.list({})) || [];
+
+      // Optimistically update only tasks in this status
+      const reordered = [...previousTasks];
+      const statusTasks = orderedIds
+        .map((id) => previousTasks.find((t) => t.id === id && t.status === status))
+        .filter(Boolean) as Task[];
+
+      const otherStatus = reordered.filter((t) => t.status !== status);
+      const remaining = reordered.filter(
+        (t) => t.status === status && !orderedIds.includes(t.id)
+      );
+
+      const newStatusOrder = [...statusTasks, ...remaining].map((t, idx) => ({
+        ...t,
+        position: idx + 1,
+      }));
+
+      queryClient.setQueryData<Task[]>(taskKeys.list({}), [...otherStatus, ...newStatusOrder]);
+
+      return { previousTasks };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(taskKeys.list({}), context.previousTasks);
+      }
+      toast.error("Failed to reorder tasks");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
 }

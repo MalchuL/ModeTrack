@@ -31,6 +31,7 @@ class Task(Base):
     priority = Column(Enum(TaskPriority), default=TaskPriority.MEDIUM, nullable=False)
     status = Column(Enum(TaskStatus), default=TaskStatus.TODO, nullable=False, index=True)
     due_date = Column(DateTime, nullable=True, index=True)
+    position = Column(Integer, nullable=True, index=True)
     tags = Column(JSON, default=list, nullable=False)
     
     # Foreign key to Goal

@@ -101,6 +101,104 @@ class TaskRepository(BaseRepository[Task]):
                 
         return dict(grouped)
 
+    # --- Ordering helpers ---
+    @staticmethod
+    def _is_due_arrived(task: Task) -> bool:
+        if not task.due_date:
+            return False
+        now = datetime.now(task.due_date.tzinfo) if task.due_date.tzinfo else datetime.now()
+        return task.due_date.date() <= now.date()
+
+    @staticmethod
+    def _status_weight(task: Task) -> int:
+        weights = {
+            TaskStatus.IN_PROGRESS: 2,
+            TaskStatus.TODO: 1,
+            TaskStatus.COMPLETED: 0,
+        }
+        return weights.get(task.status, 0)
+
+    @staticmethod
+    def _priority_weight(task: Task) -> int:
+        weights = {
+            TaskPriority.URGENT: 4,
+            TaskPriority.HIGH: 3,
+            TaskPriority.MEDIUM: 2,
+            TaskPriority.LOW: 1,
+        }
+        return weights.get(task.priority, 0)
+
+    def sort_tasks(self, tasks: List[Task]) -> List[Task]:
+        """
+        Deterministic ordering matching frontend:
+        Ordering priority:
+        1) Due-arrived (overdue/today) first across all tasks
+        2) Status: In Progress > Todo > Completed
+        3) Position (asc when set; nulls after)
+        4) Due-date presence (dated before undated)
+        5) If due date: due_date asc
+        6) If no due date: created_at desc (newest first)
+        7) Priority desc
+        8) created_at asc tie-breaker
+        """
+
+        def sort_key(t: Task):
+            status_rank = {
+                TaskStatus.IN_PROGRESS: 0,
+                TaskStatus.TODO: 1,
+                TaskStatus.COMPLETED: 2,
+            }.get(t.status, 3)
+
+            due_arrived = 0 if self._is_due_arrived(t) else 1  # arrived first
+            pos_flag = 0 if t.position is not None else 1
+            pos_val = t.position if t.position is not None else 10**9
+            has_due = 0 if t.due_date else 1
+            due_ts = t.due_date.timestamp() if t.due_date else float("inf")
+            created_ts = t.created_at.timestamp() if t.created_at else 0
+            priority = self._priority_weight(t)  # higher number = higher priority
+
+            if t.due_date:
+                return (due_arrived, status_rank, pos_flag, pos_val, has_due, due_ts, -priority, created_ts)
+            else:
+                # No due date: newest first after status
+                return (due_arrived, status_rank, pos_flag, pos_val, has_due, -created_ts, -priority, created_ts)
+
+        return sorted(tasks, key=sort_key)
+
+    def reorder_within_status(self, status: TaskStatus, ordered_ids: List[int]) -> List[Task]:
+        """
+        Apply manual ordering for tasks of a given status.
+        Tasks not present in ordered_ids keep their relative order after the provided list.
+        """
+        tasks = self.db.query(Task).filter(Task.status == status).all()
+        id_to_task = {t.id: t for t in tasks}
+
+        # Preserve remaining order (by existing position, then created_at) for untouched tasks
+        remaining = [
+            t for t in tasks if t.id not in ordered_ids
+        ]
+        remaining.sort(
+            key=lambda t: (
+                t.position if t.position is not None else float("inf"),
+                t.created_at or datetime.min,
+            )
+        )
+
+        ordered_list = []
+        for idx, task_id in enumerate(ordered_ids):
+            task = id_to_task.get(task_id)
+            if task:
+                task.position = idx + 1
+                ordered_list.append(task)
+
+        start_idx = len(ordered_list)
+        for offset, task in enumerate(remaining, start=1):
+            task.position = start_idx + offset
+            ordered_list.append(task)
+
+        self.db.commit()
+        return ordered_list
+
     def get_tasks_grouped_by_week(self, 
                                   start_date: Optional[datetime] = None, 
                                   end_date: Optional[datetime] = None) -> Dict[str, List[Task]]:

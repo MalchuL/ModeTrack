@@ -6,9 +6,15 @@ from sqlalchemy.orm import Session
 from app.api import deps
 from app.models.task import TaskStatus, TaskPriority
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse
+from pydantic import BaseModel, Field
 from app.services.task import TaskService
 
 router = APIRouter()
+
+
+class TaskReorderPayload(BaseModel):
+    status: TaskStatus = Field(..., description="Status group to reorder")
+    ordered_ids: List[int] = Field(..., description="Task IDs in desired order for this status")
 
 
 @router.get("/", response_model=List[TaskResponse])
@@ -48,6 +54,20 @@ def create_task(
     """
     service = TaskService(db)
     return service.create_task(task_in)
+
+
+@router.put("/reorder", response_model=List[TaskResponse])
+def reorder_tasks(
+    *,
+    db: Session = Depends(deps.get_db),
+    payload: TaskReorderPayload,
+) -> Any:
+    """
+    Reorder tasks within a status group.
+    Position wins over computed ordering. Tasks not included will follow after, keeping their relative order.
+    """
+    service = TaskService(db)
+    return service.reorder_tasks(payload.status, payload.ordered_ids)
 
 
 @router.get("/{id}", response_model=TaskResponse)

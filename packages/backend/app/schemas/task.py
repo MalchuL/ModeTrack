@@ -12,6 +12,7 @@ class TaskBase(BaseModel):
     priority: TaskPriority = Field(default=TaskPriority.MEDIUM, description="Priority level of the task")
     status: TaskStatus = Field(default=TaskStatus.TODO, description="Current status of the task")
     due_date: Optional[datetime] = Field(None, description="Due date for the task")
+    position: Optional[int] = Field(None, description="Manual ordering position within a status group")
     tags: List[str] = Field(default_factory=list, description="List of tags associated with the task")
     goal_id: Optional[int] = Field(None, description="ID of the associated goal")
 
@@ -26,6 +27,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     status: Optional[TaskStatus] = None
     due_date: Optional[datetime] = None
+    position: Optional[int] = None
     tags: Optional[List[str]] = None
     goal_id: Optional[int] = None
 

@@ -1,7 +1,7 @@
 """Database connection and session management."""
 from typing import Generator
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -56,6 +56,16 @@ def init_db() -> None:
     from app.models import task, cycle, goal, pomodoro, playlist  # noqa: F401
     
     Base.metadata.create_all(bind=engine)
+
+    # Ensure new columns exist for backwards compatibility (lightweight migration)
+    with engine.begin() as conn:
+        # SQLite pragma to inspect columns
+        result = conn.execute(text("PRAGMA table_info(tasks);")).fetchall()
+        existing_cols = {row[1] for row in result}  # type: ignore[index]
+        if "position" not in existing_cols:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN position INTEGER;"))
+            print("Added 'position' column to tasks")
+
     print("Database initialized successfully")
 
 

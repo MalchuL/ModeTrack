@@ -37,10 +37,6 @@ class TaskService:
         """
         # Use specific filter method if filters are present, otherwise generic get_all
         if any([status, priority, goal_id, tag, search, start_date, end_date]):
-            # Filter logic is in repository
-            # We might want to handle pagination manually if the repository method doesn't support it directly
-            # The current filter_tasks returns all matches. For a personal app, this is likely fine.
-            # If generic get_all handles skip/limit, we should use that for basic listing.
             tasks = self.task_repo.filter_tasks(
                 status=status, 
                 priority=priority, 
@@ -50,10 +46,11 @@ class TaskService:
                 start_date=start_date,
                 end_date=end_date
             )
-            # Simple manual pagination for filtered results
-            return tasks[skip : skip + limit]
         else:
-            return self.task_repo.get_all(skip=skip, limit=limit)
+            tasks = self.task_repo.get_all(skip=skip, limit=limit)
+
+        ordered = self.task_repo.sort_tasks(tasks)
+        return ordered[skip : skip + limit]
 
     def create_task(self, task_in: TaskCreate) -> Task:
         # Validate business rules here if any
@@ -84,4 +81,13 @@ class TaskService:
 
     def get_tasks_by_day(self) -> Dict[Any, List[Task]]:
         return self.task_repo.get_tasks_grouped_by_date()
+
+    def reorder_tasks(self, status_value: TaskStatus, ordered_ids: List[int]) -> List[Task]:
+        if not ordered_ids:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ordered_ids cannot be empty")
+
+        tasks = self.task_repo.reorder_within_status(status_value, ordered_ids)
+        # Return freshly sorted list for that status
+        status_tasks = [t for t in tasks if t.status == status_value]
+        return self.task_repo.sort_tasks(status_tasks)
 
