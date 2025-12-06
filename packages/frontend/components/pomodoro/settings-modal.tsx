@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { usePomodoroSettings, useUpdatePomodoroSettings } from "@/hooks/use-pomodoro";
@@ -36,7 +36,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     reset,
     formState: { isSubmitting },
   } = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsSchema),
+    resolver: zodResolver(settingsSchema) as Resolver<SettingsFormValues>,
     defaultValues: {
        work_duration_minutes: 25,
        short_break_minutes: 5,

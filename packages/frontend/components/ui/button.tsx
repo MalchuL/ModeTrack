@@ -1,7 +1,4 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot"; // We don't have radix yet, let's stick to basic or install it.
-// Actually, I didn't install radix-ui primitives. I'll implement simple versions first.
-// Task list just says "Build Button component with variants"
 import { cn } from "@/lib/utils";
 
 export interface ButtonProps

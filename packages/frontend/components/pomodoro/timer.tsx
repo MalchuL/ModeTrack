@@ -3,7 +3,6 @@ import { Play, Pause, RotateCcw, Settings } from "lucide-react";
 import { useTimerStore, TimerPhase } from "@/stores/timer-store";
 import { usePomodoroSettings, useLogPomodoroSession } from "@/hooks/use-pomodoro";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress"; // Need to verify if I have this or build custom
 import { playNotificationSound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";

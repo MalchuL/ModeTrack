@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { X } from "lucide-react";
@@ -48,7 +48,7 @@ export function TaskEditor({ isOpen, onClose, task }: TaskEditorProps) {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<TaskFormValues>({
-    resolver: zodResolver(taskSchema),
+    resolver: zodResolver(taskSchema) as Resolver<TaskFormValues>,
     defaultValues: {
       priority: TaskPriority.MEDIUM,
       status: TaskStatus.TODO,

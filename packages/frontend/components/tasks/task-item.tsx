@@ -61,7 +61,7 @@ function InlineEdit({
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [type, onCancel]);
+  }, [type, anchorRect, onCancel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
