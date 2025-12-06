@@ -1,11 +1,6 @@
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { HeatmapData } from "@/types/cycle";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-// We need to add Tooltip component to UI library first, or implement simple one here.
-// For now, I'll use the native title attribute or implement a simple tooltip.
-// Actually, I'll implement a simple css-based tooltip or just use title for MVP to save time/context.
 
 interface ProgressHeatmapProps {
   data: HeatmapData[];
@@ -13,9 +8,8 @@ interface ProgressHeatmapProps {
 }
 
 export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
-  // Data is expected to be 84 days (12 weeks * 7 days)
-  // We render it as a grid: 12 rows (weeks), 7 columns (days)
-  
+  const today = startOfDay(new Date());
+
   return (
     <div className="grid grid-cols-7 gap-1 w-fit">
       {/* Day headers */}
@@ -26,9 +20,10 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
       ))}
       
       {data.map((day) => {
-        const dateObj = new Date(day.date);
-        const isToday = format(new Date(), "yyyy-MM-dd") === day.date;
-        const isFuture = dateObj > new Date();
+        const dateObj = startOfDay(new Date(day.date));
+        const isToday = dateObj.getTime() === today.getTime();
+        const isPast = isBefore(dateObj, today);
+        const isFuture = dateObj > today;
         
         return (
           <button
@@ -38,11 +33,15 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
             title={`${format(dateObj, "MMM d, yyyy")}: ${day.completed ? "Completed" : "Incomplete"}`}
             className={cn(
               "h-6 w-6 rounded-sm border transition-all",
-              day.completed 
-                ? "bg-green-500 border-green-600 hover:bg-green-600" 
-                : "bg-secondary border-transparent hover:border-border",
+              // Completed: Green
+              day.completed && "bg-green-500 border-green-600 hover:bg-green-600",
+              // Not completed AND In Past: Red (Missed)
+              !day.completed && isPast && "bg-red-500 border-red-600 hover:bg-red-600 opacity-70",
+              // Not completed AND (Today OR Future): Default Grey
+              !day.completed && !isPast && "bg-secondary border-transparent hover:border-border",
+              
               isToday && "ring-2 ring-ring ring-offset-1",
-              isFuture && "opacity-30 cursor-not-allowed"
+              isFuture && "opacity-30 cursor-not-allowed hover:bg-secondary"
             )}
           />
         );
@@ -50,4 +49,3 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
     </div>
   );
 }
-

@@ -32,13 +32,13 @@ class CycleService:
         start_date = cycle_in.start_date
         end_date = cycle_in.end_date or (start_date + timedelta(days=83)) # 84 days total (inclusive)
 
-        # Check for overlaps with other active cycles
-        overlapping = self.cycle_repo.get_overlapping_cycles(start_date, end_date)
-        if overlapping:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cycle overlaps with an existing active cycle"
-            )
+        # NOTE: We allow overlaps now, user will be warned on frontend if needed.
+        # overlapping = self.cycle_repo.get_overlapping_cycles(start_date, end_date)
+        # if overlapping:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="Cycle overlaps with an existing active cycle"
+        #     )
 
         cycle = Cycle(
             name=cycle_in.name,
@@ -59,3 +59,8 @@ class CycleService:
             return cycle
         return self.cycle_repo.update(cycle_id, {"is_archived": True})
 
+    def delete_cycle(self, cycle_id: int) -> bool:
+        cycle = self.get_cycle(cycle_id)
+        # Only allow deleting if archived? Or allow any deletion?
+        # For safety, usually archived is enough, but user requested delete.
+        return self.cycle_repo.delete(cycle_id)

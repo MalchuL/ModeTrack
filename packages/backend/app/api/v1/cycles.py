@@ -60,3 +60,15 @@ def archive_cycle(
     service = CycleService(db)
     return service.archive_cycle(id)
 
+
+@router.delete("/{id}", response_model=bool)
+def delete_cycle(
+    *,
+    db: Session = Depends(deps.get_db),
+    id: int,
+) -> Any:
+    """
+    Delete a cycle.
+    """
+    service = CycleService(db)
+    return service.delete_cycle(id)

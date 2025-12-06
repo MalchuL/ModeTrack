@@ -37,6 +37,11 @@ const archiveCycle = async (id: number) => {
   return data;
 };
 
+const deleteCycle = async (id: number) => {
+  const { data } = await api.delete<boolean>(`/cycles/${id}`);
+  return data;
+};
+
 export function useCycles(activeOnly = false) {
   return useQuery({
     queryKey: [...cycleKeys.lists(), { activeOnly }],
@@ -65,6 +70,20 @@ export function useArchiveCycle() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.lists() });
       toast.success("Cycle archived");
+    },
+  });
+}
+
+export function useDeleteCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteCycle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cycleKeys.lists() });
+      toast.success("Cycle deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete cycle");
     },
   });
 }
@@ -180,4 +199,3 @@ export function useToggleProgress() {
     },
   });
 }
-

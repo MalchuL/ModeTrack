@@ -1,7 +1,7 @@
 import { format, differenceInDays } from "date-fns";
-import { Archive, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Archive, Calendar, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { Cycle } from "@/types/cycle";
-import { useArchiveCycle } from "@/hooks/use-cycles";
+import { useArchiveCycle, useDeleteCycle } from "@/hooks/use-cycles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoalList } from "./goal-list";
@@ -16,6 +16,7 @@ interface CycleCardProps {
 export function CycleCard({ cycle, defaultExpanded = false }: CycleCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const archiveCycle = useArchiveCycle();
+  const deleteCycle = useDeleteCycle();
 
   const startDate = new Date(cycle.start_date);
   const endDate = new Date(cycle.end_date);
@@ -31,6 +32,13 @@ export function CycleCard({ cycle, defaultExpanded = false }: CycleCardProps) {
     e.stopPropagation();
     if (confirm("Are you sure you want to archive this cycle?")) {
       archiveCycle.mutate(cycle.id);
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this cycle? This action cannot be undone.")) {
+      deleteCycle.mutate(cycle.id);
     }
   };
 
@@ -64,9 +72,13 @@ export function CycleCard({ cycle, defaultExpanded = false }: CycleCardProps) {
           </div>
           
           <div className="flex items-center gap-1">
-            {!cycle.is_archived && (
+            {!cycle.is_archived ? (
               <Button variant="ghost" size="icon" onClick={handleArchive} title="Archive Cycle">
                 <Archive className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={handleDelete} title="Delete Cycle">
+                <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive" />
               </Button>
             )}
             <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)}>
@@ -94,4 +106,3 @@ export function CycleCard({ cycle, defaultExpanded = false }: CycleCardProps) {
     </Card>
   );
 }
-

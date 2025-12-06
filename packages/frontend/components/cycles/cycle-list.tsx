@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, History } from "lucide-react";
 import { useCycles, useCreateCycle } from "@/hooks/use-cycles";
 import { CycleCard } from "./cycle-card";
@@ -10,32 +10,62 @@ import { format } from "date-fns";
 export function CycleList() {
   const [showArchived, setShowArchived] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const autoCreateAttempted = useRef(false);
   
-  const { data: cycles, isLoading } = useCycles(!showArchived);
+  // Always fetch ALL cycles to check duplication/history for auto-create logic
+  // We will filter them client-side for display based on showArchived
+  const { data: allCycles, isLoading } = useCycles(false); // activeOnly=false -> get all
   const createCycle = useCreateCycle();
 
-  // Auto-fill logic: If activeOnly is true (default), and no cycles found, create one.
+  const displayCycles = allCycles?.filter(c => showArchived || !c.is_archived) || [];
+
+  // Auto-fill logic: 
+  // Only create if NO cycles exist at all (fresh start) 
+  // OR if the last cycle ended in the past and we have no active cycles.
   useEffect(() => {
-    if (!isLoading && cycles && cycles.length === 0 && !showArchived) {
-      // No active cycles. Auto-create one starting today.
-      const today = new Date();
-      const startDate = format(today, "yyyy-MM-dd");
+    if (!isLoading && allCycles && !autoCreateAttempted.current) {
+      autoCreateAttempted.current = true; // Run only once per mount/data load
+
+      const hasActive = allCycles.some(c => !c.is_archived);
+      const hasAny = allCycles.length > 0;
       
-      // Check if we already tried to create (to prevent loop if API fails)
-      // Using session storage or ref might be safer, but for now let's just try once
-      // Or rely on the user explicitly creating if they deleted everything.
-      // But "Autofill ... when page is loaded" implies automation.
-      // Let's create it.
-      
-      // Ideally we check if there really are no cycles at all?
-      // Or just no ACTIVE ones? "Autofill 12-week in year" likely implies "Ensure there is a current cycle".
-      
-      createCycle.mutate({
-        name: `Cycle ${format(today, "MMM yyyy")}`,
-        start_date: startDate
-      });
+      if (!hasAny) {
+        // Fresh start - create one
+        const today = new Date();
+        const startDate = format(today, "yyyy-MM-dd");
+        createCycle.mutate({
+          name: `Cycle ${format(today, "MMM yyyy")}`,
+          start_date: startDate
+        });
+      } else if (!hasActive) {
+        // Has archived cycles but no active ones.
+        // Check if the most recent cycle (by end date) is really in the past.
+        // If the user *just* archived a cycle that covers today, we shouldn't recreate it immediately.
+        const sortedCycles = [...allCycles].sort((a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime());
+        const latestCycle = sortedCycles[0];
+        const today = new Date();
+        const latestEnd = new Date(latestCycle.end_date);
+        
+        // If latest cycle ended yesterday or before, assume they want a new one.
+        // If latest cycle ends today or in future (and is archived), it means they manually stopped it.
+        // Don't auto-create in that case.
+        if (latestEnd < today) {
+           // Maybe they want to start a new one?
+           // But let's be conservative. Only auto-create on *empty* db is safer.
+           // Or maybe if they have NO active cycles, and they visit the page, prompt them?
+           // The user requirement "Autofill ... when page is loaded" suggests proactive.
+           // But "It duplicates same cycle if I archive it" suggests we were too aggressive.
+           
+           // Fix: Only auto-create if NO cycles exist. Otherwise let user create.
+           // This solves the duplication issue completely.
+           // If they want a new cycle after archiving, they click "New Cycle".
+           // Re-reading requirement: "Autofill 12-week in year when page is loaded"
+           // Maybe they meant "If I have NO data, give me a default one".
+           // I will stick to "Only if no cycles exist".
+        }
+      }
     }
-  }, [isLoading, cycles, showArchived, createCycle]);
+  }, [isLoading, allCycles, createCycle]);
 
   if (isLoading) return <div className="flex justify-center py-12"><LoadingSpinner /></div>;
 
@@ -60,20 +90,18 @@ export function CycleList() {
         </Button>
       </div>
 
-      {!cycles?.length ? (
+      {!displayCycles.length ? (
         <div className="text-center py-12 border rounded-lg bg-muted/10">
           <p className="text-muted-foreground mb-4">
-            {showArchived ? "No cycles found." : "Creating your first cycle..."}
+            {showArchived ? "No cycles found." : "No active cycles."}
           </p>
-          {showArchived && (
-             <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
-               Start New Cycle
-             </Button>
-          )}
+          <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
+            Start New Cycle
+          </Button>
         </div>
       ) : (
         <div className="space-y-6">
-          {cycles.map((cycle) => (
+          {displayCycles.map((cycle) => (
             <CycleCard 
               key={cycle.id} 
               cycle={cycle} 
