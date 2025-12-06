@@ -118,6 +118,8 @@ function InlineEdit({
   );
 }
 
+const ANIMATION_DURATION = 150;
+
 export function TaskItem({ task, onEdit }: TaskItemProps) {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -131,7 +133,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
       if (task.updated_at !== prevUpdatedAt.current) {
           setIsUpdated(true);
           prevUpdatedAt.current = task.updated_at;
-          const timer = setTimeout(() => setIsUpdated(false), 1000);
+          const timer = setTimeout(() => setIsUpdated(false), ANIMATION_DURATION);  // 150ms is the duration of the animation
           return () => clearTimeout(timer);
       }
   }, [task.updated_at]);
@@ -343,7 +345,7 @@ export function TaskItem({ task, onEdit }: TaskItemProps) {
         "group flex items-start gap-3 p-4 rounded-lg border transition-all relative overflow-visible",
         // Duration reduced to 150ms for faster feedback, or removed for instant
         isUpdated && "duration-0", // Instant on
-        !isUpdated && "duration-500", // Slow off
+        !isUpdated && "duration-700", // Slow off
         
         isCompleted 
             ? "opacity-60 bg-muted/50 border-transparent" 
