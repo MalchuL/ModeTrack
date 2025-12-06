@@ -1,0 +1,15 @@
+node_modules
+pnpm-debug.log
+.pnpm-store
+.turbo
+.git
+.gitignore
+.env
+.env.*
+*.log
+packages/**/node_modules
+packages/**/.next
+packages/**/dist
+packages/**/build
+packages/backend/data
+misc/
