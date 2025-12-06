@@ -31,16 +31,25 @@ function InlineEdit({
 }) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
-  const selectRef = useRef<HTMLSelectElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (inputRef.current) {
+    if (type !== "select" && inputRef.current) {
       inputRef.current.focus();
     }
-    if (selectRef.current && type === "select") {
-        selectRef.current.focus();
-    }
   }, [type]);
+
+  // Close select picker on outside click
+  useEffect(() => {
+    if (type !== "select") return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onCancel();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [type, onCancel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -60,27 +69,36 @@ function InlineEdit({
   return (
     <div 
         data-dnd-block
-        className={cn("absolute z-50 neu-surface-soft p-1 flex gap-1 items-center shadow-[var(--shadow-soft)]", className)} 
+        ref={containerRef}
+        className={cn("absolute z-[999999] neu-surface-soft p-1 flex gap-1 items-center shadow-[var(--shadow-soft)]", className)} 
         onClick={(e) => e.stopPropagation()}
         onBlur={handleBlur} 
         tabIndex={-1}
     >
       {type === "select" ? (
-        <select
-            ref={selectRef}
-            value={value} 
-            onChange={(e) => {
-                setValue(e.target.value);
-                onSave(e.target.value);
-            }}
-            className="h-8 w-[120px] text-xs bg-transparent border rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring"
-            autoFocus
-        >
-            <option value={TaskPriority.LOW}>Low</option>
-            <option value={TaskPriority.MEDIUM}>Medium</option>
-            <option value={TaskPriority.HIGH}>High</option>
-            <option value={TaskPriority.URGENT}>Urgent</option>
-        </select>
+        <div className="flex flex-col gap-1">
+          {[
+            { label: "Low", value: TaskPriority.LOW, color: "bg-[#d9f99d]" },
+            { label: "Med", value: TaskPriority.MEDIUM, color: "bg-[#fef08a]" },
+            { label: "High", value: TaskPriority.HIGH, color: "bg-[#fdba74]" },
+            { label: "Urgent", value: TaskPriority.URGENT, color: "bg-[#fca5a5]" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              className={cn(
+                "px-3 py-1 rounded-md text-[11px] font-semibold border text-black transition-colors",
+                opt.color,
+                value === opt.value ? "ring-2 ring-primary/70 border-transparent" : "border-border"
+              )}
+              onClick={() => {
+                setValue(opt.value);
+                onSave(opt.value);
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       ) : (
         <Input 
             ref={inputRef}
