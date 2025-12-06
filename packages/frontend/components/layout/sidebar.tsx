@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListTodo, CalendarRange, Timer, Music, Menu } from "lucide-react";
+import { LayoutDashboard, ListTodo, CalendarRange, Timer, Music, Menu, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -15,6 +15,7 @@ const navItems = [
   { href: "/cycles", label: "12-Week Year", icon: CalendarRange },
   { href: "/pomodoro", label: "Focus Timer", icon: Timer },
   { href: "/music", label: "Music", icon: Music },
+  { href: "/docs", label: "Documentation", icon: BookOpen },
 ];
 
 export function Sidebar() {
