@@ -122,7 +122,7 @@ function InlineEdit({
   );
 }
 
-const ANIMATION_DURATION = 2000;
+const ANIMATION_DURATION = 700;
 
 export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) {
   const updateTask = useUpdateTask();
@@ -290,9 +290,9 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     <div 
         key="status"
         className={cn(
-        "px-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all select-none neu-surface-soft shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)]",
+        "px-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all select-none neu-surface-soft shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)] border border-transparent",
         task.status === TaskStatus.IN_PROGRESS 
-            ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+            ? "bg-[rgba(183,161,255,0.18)] text-[#c8b7ff] border-[rgba(183,161,255,0.35)]"
             : "text-muted-foreground"
         )}
         onClick={handleToggleProgress}
@@ -431,11 +431,11 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
         "group flex items-start gap-3 p-4 rounded-2xl neu-surface transition-all relative overflow-visible cursor-grab active:cursor-grabbing shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)] hover:-translate-y-0.5 task-updated-container",
         surfaceClass,
         "task-updated-overlay task-updated-ring",
-        isUpdated && "is-updated ring-2 ring-[rgba(123,223,242,0.35)]",
+        isUpdated && "is-updated ring-2 ring-[rgba(167,139,250,0.35)]",
         isDragging && "shadow-[var(--shadow-strong)] ring-2 ring-[rgba(31,42,68,0.45)] scale-[1.01] cursor-grabbing",
         isCompleted && "opacity-70 saturate-75",
-        !isCompleted && isOverdueOrToday && "ring-2 ring-[rgba(239,68,68,0.35)] dark:ring-[rgba(248,113,113,0.5)]",
-        !isCompleted && !isOverdueOrToday && isInProgress && "ring-2 ring-[rgba(255,201,122,0.38)] dark:ring-[rgba(255,193,94,0.45)]"
+        !isCompleted && isOverdueOrToday && "ring-2 ring-[rgba(239,68,68,0.38)] dark:ring-[rgba(248,113,113,0.55)]",
+        !isCompleted && !isOverdueOrToday && isInProgress && "ring-2 ring-[rgba(96,165,250,0.38)] dark:ring-[rgba(96,165,250,0.55)]"
       )}
       onClick={() => {
         if (isDragging || draggedRef.current) return;
