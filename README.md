@@ -9,6 +9,12 @@ A comprehensive productivity application combining Task Management, 12-Week Year
 - **Pomodoro Timer**: Focus timer with customizable work/break intervals and audio notifications.
 - **Music Player**: Manage playlists for Work and Break contexts, with automatic switching based on timer phase.
 
+## Screenshots
+
+![Task board](misc/Tasks.png)
+
+![12-week year overview](misc/12-Week%20Year.png)
+
 ## Tech Stack
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, React Query, Zustand.
