@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { format, isBefore, isToday, startOfDay } from "date-fns";
 import { CheckCircle2, Circle, Clock, Tag, Trash2, AlertCircle, Check, X, AlignLeft, Edit3, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -21,17 +22,20 @@ function InlineEdit({
   type = "text", 
   onSave, 
   onCancel,
-  className
+  className,
+  anchorRect,
 }: { 
   initialValue: string; 
   type?: "text" | "date" | "select";
   onSave: (val: string) => void; 
   onCancel: () => void;
   className?: string;
+  anchorRect?: DOMRect | null;
 }) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [floatingStyle, setFloatingStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
     if (type !== "select" && inputRef.current) {
@@ -42,6 +46,14 @@ function InlineEdit({
   // Close select picker on outside click
   useEffect(() => {
     if (type !== "select") return;
+    if (anchorRect) {
+      setFloatingStyle({
+        position: "fixed",
+        top: anchorRect.bottom + 6,
+        left: anchorRect.left,
+        zIndex: 999999,
+      });
+    }
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         onCancel();
@@ -66,14 +78,19 @@ function InlineEdit({
       onSave(value);
   };
 
-  return (
-    <div 
-        data-dnd-block
-        ref={containerRef}
-        className={cn("absolute z-[999999] neu-surface-soft p-1 flex gap-1 items-center shadow-[var(--shadow-soft)]", className)} 
-        onClick={(e) => e.stopPropagation()}
-        onBlur={handleBlur} 
-        tabIndex={-1}
+  const content = (
+    <div
+      data-dnd-block
+      ref={containerRef}
+      className={cn(
+        type === "select" ? "fixed" : "absolute",
+        "neu-surface-soft p-1 flex gap-1 items-center shadow-[var(--shadow-soft)]",
+        className
+      )}
+      style={type === "select" ? floatingStyle : undefined}
+      onClick={(e) => e.stopPropagation()}
+      onBlur={handleBlur}
+      tabIndex={-1}
     >
       {type === "select" ? (
         <div className="flex flex-col gap-1">
@@ -138,6 +155,12 @@ function InlineEdit({
       )}
     </div>
   );
+
+  if (type === "select") {
+    return createPortal(content, document.body);
+  }
+
+  return content;
 }
 
 const ANIMATION_DURATION = 700;
@@ -271,6 +294,8 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     [TaskPriority.URGENT]: "text-red-600",
   };
 
+  const priorityAnchorRef = useRef<HTMLDivElement>(null);
+
   const today = startOfDay(new Date());
   const dueDate = task.due_date ? startOfDay(new Date(task.due_date)) : null;
   const isOverdueOrToday = dueDate && (isBefore(dueDate, today) || isToday(dueDate));
@@ -348,14 +373,15 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
   );
 
   const PriorityBadge = (
-    <div key="priority" className="relative">
+    <div key="priority" className="relative" ref={priorityAnchorRef}>
       {editingField === "priority" ? (
           <InlineEdit 
               initialValue={task.priority}
               type="select"
               onSave={updatePriority}
               onCancel={() => setEditingField(null)}
-              className="top-[-40px] left-0"
+              className=""
+              anchorRect={priorityAnchorRef.current?.getBoundingClientRect?.()}
           />
       ) : (
           <div 
@@ -363,7 +389,10 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
               "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft shadow-[var(--shadow-soft)] capitalize cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs",
               priorityColor[task.priority]
               )}
-              onClick={(e) => { e.stopPropagation(); setEditingField("priority"); }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setEditingField("priority"); 
+              }}
               title="Click to edit priority"
           >
               <AlertCircle className="h-3 w-3" />
