@@ -45,7 +45,9 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
       {weeks.map((_, idx) => (
         <div
           key={`week-${idx}`}
-          className="text-[10px] text-center text-muted-foreground font-semibold"
+          className="text-[10px] text-center text-muted-foreground font-semibold select-none pointer-events-none"
+          tabIndex={-1}
+          role="presentation"
         >
           {idx + 1}
         </div>
@@ -53,7 +55,11 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
 
       {dayLabels.map((label, dayIndex) => (
         <React.Fragment key={`row-${label}-${dayIndex}`}>
-          <div className="text-[10px] text-center text-muted-foreground font-medium">
+          <div
+            className="text-[10px] text-center text-muted-foreground font-medium select-none pointer-events-none"
+            tabIndex={-1}
+            role="presentation"
+          >
             {label}
           </div>
           {weeks.map((week, wIdx) => {
@@ -62,13 +68,28 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
               return (
                 <div
                   key={`${entry.key}-${wIdx}`}
-                  className="h-6 w-6 rounded-sm border border-border/30 bg-foreground/5 opacity-40 cursor-default pointer-events-none"
-                />
+                  className="h-6 w-6 rounded-sm border border-border/30 bg-foreground/5 opacity-40 cursor-not-allowed relative pointer-events-none select-none focus:outline-none focus:ring-0"
+                  tabIndex={-1}
+                  role="presentation"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center text-[10px] text-muted-foreground/70">
+                    ⌀
+                  </div>
+                </div>
               );
             }
 
             const day = "day" in entry ? entry.day : null;
-            if (!day) return <div key={`${entry.key}-${wIdx}`} />;
+            if (!day) {
+              return (
+                <div
+                  key={`${entry.key}-${wIdx}`}
+                  className="h-6 w-6 rounded-sm border border-border/30 bg-foreground/5 opacity-40 cursor-not-allowed relative pointer-events-none select-none focus:outline-none focus:ring-0"
+                  tabIndex={-1}
+                  role="presentation"
+                />
+              );
+            }
 
             const dateObj = startOfDay(new Date(day.date));
             const isToday = dateObj.getTime() === today.getTime();
@@ -78,8 +99,11 @@ export function ProgressHeatmap({ data, onToggleDay }: ProgressHeatmapProps) {
             return (
               <button
                 key={`${entry.key}-${wIdx}`}
+                type="button"
                 onClick={() => !isFuture && onToggleDay(day.date, !day.completed)}
                 disabled={isFuture}
+                tabIndex={isFuture ? -1 : 0}
+                aria-disabled={isFuture}
                 title={`${format(dateObj, "MMM d, yyyy")}: ${day.completed ? "Completed" : "Incomplete"}`}
                 className={cn(
                   "h-6 w-6 rounded-sm border transition-all",
