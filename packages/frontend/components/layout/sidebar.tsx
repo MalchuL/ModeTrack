@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useTimerStore } from "@/stores/timer-store";
+import { APP_NAME } from "@/lib/constants";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -46,7 +47,7 @@ export function Sidebar() {
         )}
       >
         <div className="p-6 border-b border-transparent">
-          <h1 className="text-2xl font-bold tracking-tight">Productivity</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{APP_NAME}</h1>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">

@@ -5,12 +5,13 @@ import { Providers } from "./providers";
 import { ToastContainer } from "@/components/ui/toast";
 import { Player } from "@/components/music/player";
 import { Sidebar } from "@/components/layout/sidebar";
+import { APP_NAME } from "@/lib/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Productivity App",
-  description: "Personal productivity application",
+  title: APP_NAME,
+  description: `${APP_NAME} – personal productivity application`,
 };
 
 export default function RootLayout({
