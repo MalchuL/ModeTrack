@@ -1,0 +1,41 @@
+[project]
+name = "productivity-app-backend"
+version = "1.0.0"
+description = "FastAPI backend for Personal Productivity Application"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.108.0",
+    "uvicorn[standard]>=0.25.0",
+    "sqlalchemy>=2.0.23",
+    "alembic>=1.13.1",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+    "httpx>=0.25.2",
+    "black>=23.12.1",
+    "ruff>=0.1.9",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
