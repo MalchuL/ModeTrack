@@ -43,7 +43,7 @@ export interface PomodoroStats {
   total_work_seconds: number;
 }
 
-export type PomodoroPhase = "work" | "break";
+export type PomodoroPhase = "work" | "break" | "long_break";
 
 export interface PomodoroTimerState {
   id: string;
@@ -52,6 +52,8 @@ export interface PomodoroTimerState {
   is_running: boolean;
   remaining_seconds: number;
   elapsed_seconds: number;
+  cycles_completed: number;
+  next_long_break_in: number;
   started_at: string | null;
   ends_at: string | null;
   updated_at: string;

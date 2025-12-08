@@ -33,6 +33,20 @@ class PomodoroService:
             return dt.replace(tzinfo=timezone.utc)
         return dt
 
+    def _compute_next_long_break(self, cycles_completed: int, interval: int) -> int:
+        if interval <= 0:
+            return 0
+        remainder = cycles_completed % interval
+        return interval if remainder == 0 else interval - remainder
+
+    def _attach_metadata(self, state: PomodoroTimerState) -> PomodoroTimerState:
+        settings = self.settings_repo.get_settings()
+        state.next_long_break_in = self._compute_next_long_break(
+            cycles_completed=state.cycles_completed,
+            interval=settings.long_break_interval,
+        )
+        return state
+
     def get_settings(self) -> PomodoroSettings:
         return self.settings_repo.get_settings()
 
@@ -72,7 +86,17 @@ class PomodoroService:
     def _advance_phase(self, state: PomodoroTimerState) -> PomodoroTimerState:
         settings = self.settings_repo.get_settings()
         next_phase = "break" if state.phase == "work" else "work"
-        duration_minutes = settings.work_duration_minutes if next_phase == "work" else settings.short_break_minutes
+        if state.phase == "work":
+            state.cycles_completed = state.cycles_completed + 1
+            is_long_break = settings.long_break_interval > 0 and state.cycles_completed % settings.long_break_interval == 0
+            next_phase = "long_break" if is_long_break else "break"
+
+        if next_phase == "work":
+            duration_minutes = settings.work_duration_minutes
+        elif next_phase == "long_break":
+            duration_minutes = settings.long_break_minutes
+        else:
+            duration_minutes = settings.short_break_minutes
         duration_seconds = duration_minutes * 60
 
         auto_start = (
@@ -87,7 +111,8 @@ class PomodoroService:
         state.started_at = self._now() if auto_start else None
         state.ends_at = (self._now() + timedelta(seconds=duration_seconds)) if auto_start else None
         state = self.timer_repo.refresh_uuid(state)
-        return self.timer_repo.save(state)
+        state = self.timer_repo.save(state)
+        return self._attach_metadata(state)
 
     def _rehydrate_timer(self) -> PomodoroTimerState:
         state = self.timer_repo.get_state()
@@ -102,7 +127,7 @@ class PomodoroService:
                 return self._advance_phase(state)
             state.remaining_seconds = int(diff)
             state.elapsed_seconds = max(0, int((now - (state.started_at or now)).total_seconds()))
-        return state
+        return self._attach_metadata(state)
 
     def get_timer(self) -> PomodoroTimerState:
         return self._rehydrate_timer()
@@ -131,7 +156,8 @@ class PomodoroService:
         state.started_at = self._now()
         state.ends_at = self._now() + timedelta(seconds=payload.duration_seconds)
         state = self.timer_repo.refresh_uuid(state)
-        return self.timer_repo.save(state)
+        state = self.timer_repo.save(state)
+        return self._attach_metadata(state)
 
     def pause_timer(self, payload: PomodoroTimerPause) -> PomodoroTimerState:
         state = self._rehydrate_timer()
@@ -148,7 +174,8 @@ class PomodoroService:
         state.is_running = False
         state.status = "paused"
         state.ends_at = None
-        return self.timer_repo.save(state)
+        state = self.timer_repo.save(state)
+        return self._attach_metadata(state)
 
     def reset_timer(self, payload: PomodoroTimerReset) -> PomodoroTimerState:
         state = self.timer_repo.get_state()
@@ -162,12 +189,14 @@ class PomodoroService:
         state.elapsed_seconds = 0
         state.started_at = None
         state.ends_at = None
-        return self.timer_repo.save(state)
+        state = self.timer_repo.save(state)
+        return self._attach_metadata(state)
 
     def complete_phase(self) -> PomodoroTimerState:
         state = self._rehydrate_timer()
         state.status = "finished"
         state.is_running = False
         state.ends_at = None
-        return self.timer_repo.save(state)
+        state = self.timer_repo.save(state)
+        return self._attach_metadata(state)
 

@@ -8,7 +8,7 @@ import {
   useResetPomodoroTimer,
   usePomodoroSettings,
 } from "@/hooks/use-pomodoro";
-import type { PomodoroTimerState } from "@/types/pomodoro";
+import type { PomodoroTimerState, PomodoroPhase } from "@/types/pomodoro";
 import { playNotificationSound } from "@/lib/audio";
 import { DEFAULT_NOTIFICATION_SOUND } from "@/constants/pomodoro";
 
@@ -27,6 +27,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
   const { data: settings } = usePomodoroSettings();
   const workSeconds = (settings?.work_duration_minutes ?? 25) * 60;
   const breakSeconds = (settings?.short_break_minutes ?? 5) * 60;
+  const longBreakSeconds = (settings?.long_break_minutes ?? 15) * 60;
 
   const { data: remoteState, isFetching, isLoading, refetch } = usePomodoroTimer();
   const startTimer = useStartPomodoroTimer();
@@ -44,6 +45,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
 
   const deriveRemaining = (state: typeof remoteState | undefined) => {
     if (!state) {
+      if (phase === "long_break") return longBreakSeconds;
       return phase === "work" ? workSeconds : breakSeconds;
     }
     const remainingFromState = state.remaining_seconds ?? 0;
@@ -78,8 +80,11 @@ export function Timer({ onOpenSettings }: TimerProps) {
   }, [viewState?.is_running]);
 
   const phaseDuration = useMemo(
-    () => (phase === "work" ? workSeconds : breakSeconds),
-    [phase, workSeconds, breakSeconds]
+    () => {
+      if (phase === "long_break") return longBreakSeconds;
+      return phase === "work" ? workSeconds : breakSeconds;
+    },
+    [phase, workSeconds, breakSeconds, longBreakSeconds]
   );
 
   const handleStart = async () => {
@@ -119,8 +124,11 @@ export function Timer({ onOpenSettings }: TimerProps) {
 
   const progress = Math.min(
     100,
-    Math.max(0, ((phaseDuration - timeLeft) / phaseDuration) * 100),
+    Math.max(0, phaseDuration === 0 ? 0 : ((phaseDuration - timeLeft) / phaseDuration) * 100),
   );
+
+  const nextLongBreakIn = viewState?.next_long_break_in ?? (settings?.long_break_interval ?? 4);
+  const cyclesCompleted = viewState?.cycles_completed ?? 0;
 
   return (
     <div className="flex flex-col items-center justify-center p-8 space-y-8">
@@ -150,6 +158,11 @@ export function Timer({ onOpenSettings }: TimerProps) {
           </div>
         </div>
       </div>
+
+        <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+          <div>Cycles completed: {cyclesCompleted}</div>
+          <div>To long break: {nextLongBreakIn}</div>
+        </div>
 
       {/* Controls */}
       <div className="flex items-center gap-4">

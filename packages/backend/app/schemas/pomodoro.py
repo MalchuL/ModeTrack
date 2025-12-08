@@ -68,6 +68,8 @@ class PomodoroTimerState(BaseModel):
     is_running: bool
     remaining_seconds: int
     elapsed_seconds: int
+    cycles_completed: int
+    next_long_break_in: int
     started_at: datetime | None
     ends_at: datetime | None
     updated_at: datetime
