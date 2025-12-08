@@ -1,5 +1,5 @@
 import { Play, Pause, RotateCcw, Settings } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   usePomodoroTimer,
@@ -9,6 +9,8 @@ import {
   usePomodoroSettings,
 } from "@/hooks/use-pomodoro";
 import type { PomodoroTimerState } from "@/types/pomodoro";
+import { playNotificationSound } from "@/lib/audio";
+import { DEFAULT_NOTIFICATION_SOUND } from "@/constants/pomodoro";
 
 // Helper to format MM:SS
 const formatTime = (seconds: number) => {
@@ -32,6 +34,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
   const resetTimer = useResetPomodoroTimer();
 
   const [viewState, setViewState] = useState<PomodoroTimerState | undefined>(remoteState);
+  const prevPhaseRef = useRef<string | undefined>(remoteState?.phase);
 
   const phase = viewState?.phase ?? "work";
   const isRunning = viewState?.is_running ?? false;
@@ -56,7 +59,12 @@ export function Timer({ onOpenSettings }: TimerProps) {
     if (!remoteState) return;
     setViewState(remoteState);
     setTimeLeft(deriveRemaining(remoteState));
-  }, [remoteState, workSeconds, breakSeconds]);
+
+    if (settings?.sound_enabled && prevPhaseRef.current && prevPhaseRef.current !== remoteState.phase) {
+      playNotificationSound(DEFAULT_NOTIFICATION_SOUND);
+    }
+    prevPhaseRef.current = remoteState.phase;
+  }, [remoteState, workSeconds, breakSeconds, settings?.sound_enabled]);
 
   // Local ticking for smooth UX between polls
   useEffect(() => {

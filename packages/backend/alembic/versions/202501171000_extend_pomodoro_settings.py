@@ -32,6 +32,18 @@ def upgrade() -> None:
     if "auto_start_pomodoros" not in cols:
         op.add_column("pomodoro_settings", sa.Column("auto_start_pomodoros", sa.Boolean(), nullable=False, server_default=sa.false()))
 
+    # Backfill existing single settings row with defaults to avoid NULLs
+    op.execute(
+        """
+        UPDATE pomodoro_settings
+        SET long_break_minutes = COALESCE(long_break_minutes, 15),
+            long_break_interval = COALESCE(long_break_interval, 4),
+            sound_enabled = COALESCE(sound_enabled, 1),
+            auto_start_breaks = COALESCE(auto_start_breaks, 0),
+            auto_start_pomodoros = COALESCE(auto_start_pomodoros, 0)
+        """
+    )
+
 
 def downgrade() -> None:
     bind = op.get_bind()

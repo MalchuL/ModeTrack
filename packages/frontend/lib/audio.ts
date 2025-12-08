@@ -1,4 +1,6 @@
-export function playNotificationSound() {
+import { DEFAULT_NOTIFICATION_SOUND } from "@/constants/pomodoro";
+
+export function playNotificationSound(sound: string = DEFAULT_NOTIFICATION_SOUND) {
   try {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContext) return;
@@ -10,6 +12,7 @@ export function playNotificationSound() {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
+    // Simple built-in tone; `sound` reserved for future expansion.
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
     osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1); // Drop to A4

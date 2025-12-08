@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { playNotificationSound } from "@/lib/audio";
+import { DEFAULT_NOTIFICATION_SOUND } from "@/constants/pomodoro";
 import { usePomodoroSettings, useLogPomodoroSession } from "@/hooks/use-pomodoro";
 import { TimerPhase, useTimerStore } from "@/stores/timer-store";
 
@@ -89,7 +90,7 @@ export function TimerEngine() {
   const handleCompletion = () => {
     pauseTimer();
     if (settings?.sound_enabled) {
-      playNotificationSound();
+      playNotificationSound(DEFAULT_NOTIFICATION_SOUND);
     }
 
     const now = new Date();

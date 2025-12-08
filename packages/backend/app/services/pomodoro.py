@@ -74,13 +74,18 @@ class PomodoroService:
         next_phase = "break" if state.phase == "work" else "work"
         duration_minutes = settings.work_duration_minutes if next_phase == "work" else settings.short_break_minutes
         duration_seconds = duration_minutes * 60
+
+        auto_start = (
+            settings.auto_start_pomodoros if next_phase == "work" else settings.auto_start_breaks
+        )
+
         state.phase = next_phase
-        state.status = "active"
-        state.is_running = True
+        state.status = "active" if auto_start else "paused"
+        state.is_running = auto_start
         state.elapsed_seconds = 0
         state.remaining_seconds = duration_seconds
-        state.started_at = self._now()
-        state.ends_at = self._now() + timedelta(seconds=duration_seconds)
+        state.started_at = self._now() if auto_start else None
+        state.ends_at = (self._now() + timedelta(seconds=duration_seconds)) if auto_start else None
         state = self.timer_repo.refresh_uuid(state)
         return self.timer_repo.save(state)
 
