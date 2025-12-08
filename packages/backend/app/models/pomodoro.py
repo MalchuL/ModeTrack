@@ -25,6 +25,11 @@ class PomodoroSettings(Base):
     id = Column(Integer, primary_key=True, index=True)
     work_duration_minutes = Column(Integer, default=25, nullable=False)
     short_break_minutes = Column(Integer, default=5, nullable=False)
+    long_break_minutes = Column(Integer, default=15, nullable=False)
+    long_break_interval = Column(Integer, default=4, nullable=False)
+    sound_enabled = Column(Boolean, default=True, nullable=False)
+    auto_start_breaks = Column(Boolean, default=False, nullable=False)
+    auto_start_pomodoros = Column(Boolean, default=False, nullable=False)
 
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
