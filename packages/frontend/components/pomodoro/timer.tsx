@@ -1,7 +1,13 @@
 import { Play, Pause, RotateCcw, Settings } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { usePomodoroTimer, useStartPomodoroTimer, usePausePomodoroTimer, useResetPomodoroTimer } from "@/hooks/use-pomodoro";
+import {
+  usePomodoroTimer,
+  useStartPomodoroTimer,
+  usePausePomodoroTimer,
+  useResetPomodoroTimer,
+  usePomodoroSettings,
+} from "@/hooks/use-pomodoro";
 import type { PomodoroTimerState } from "@/types/pomodoro";
 
 // Helper to format MM:SS
@@ -16,8 +22,9 @@ interface TimerProps {
 }
 
 export function Timer({ onOpenSettings }: TimerProps) {
-  const defaultWork = 25 * 60;
-  const defaultBreak = 5 * 60;
+  const { data: settings } = usePomodoroSettings();
+  const workSeconds = (settings?.work_duration_minutes ?? 25) * 60;
+  const breakSeconds = (settings?.short_break_minutes ?? 5) * 60;
 
   const { data: remoteState, isFetching, isLoading, refetch } = usePomodoroTimer();
   const startTimer = useStartPomodoroTimer();
@@ -30,11 +37,11 @@ export function Timer({ onOpenSettings }: TimerProps) {
   const isRunning = viewState?.is_running ?? false;
   const status = viewState?.status ?? "not_started";
 
-  const [timeLeft, setTimeLeft] = useState(defaultWork);
+  const [timeLeft, setTimeLeft] = useState(workSeconds);
 
   const deriveRemaining = (state: typeof remoteState | undefined) => {
     if (!state) {
-      return phase === "work" ? defaultWork : defaultBreak;
+      return phase === "work" ? workSeconds : breakSeconds;
     }
     const remainingFromState = state.remaining_seconds ?? 0;
     if (state.is_running && state.ends_at) {
@@ -49,7 +56,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
     if (!remoteState) return;
     setViewState(remoteState);
     setTimeLeft(deriveRemaining(remoteState));
-  }, [remoteState]);
+  }, [remoteState, workSeconds, breakSeconds]);
 
   // Local ticking for smooth UX between polls
   useEffect(() => {
@@ -62,7 +69,10 @@ export function Timer({ onOpenSettings }: TimerProps) {
     return () => clearInterval(interval);
   }, [viewState?.is_running]);
 
-  const phaseDuration = useMemo(() => (phase === "work" ? defaultWork : defaultBreak), [phase]);
+  const phaseDuration = useMemo(
+    () => (phase === "work" ? workSeconds : breakSeconds),
+    [phase, workSeconds, breakSeconds]
+  );
 
   const handleStart = async () => {
     if (!remoteState) {
