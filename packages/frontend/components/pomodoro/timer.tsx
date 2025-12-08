@@ -67,7 +67,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
       }
 
       intervalRef.current = setInterval(() => {
-        setTimeLeft(timeLeft - 1);
+        setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -80,7 +80,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning, timeLeft, setTimeLeft]);
+  }, [isRunning, setTimeLeft]);
 
   // Completion Logic
   useEffect(() => {
