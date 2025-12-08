@@ -1,6 +1,8 @@
 import { Play, Pause, RotateCcw, Settings } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { usePomodoroTimer, useStartPomodoroTimer, usePausePomodoroTimer, useResetPomodoroTimer } from "@/hooks/use-pomodoro";
+import type { PomodoroTimerState } from "@/types/pomodoro";
 
 // Helper to format MM:SS
 const formatTime = (seconds: number) => {
@@ -14,39 +16,93 @@ interface TimerProps {
 }
 
 export function Timer({ onOpenSettings }: TimerProps) {
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes default
-  const [isRunning, setIsRunning] = useState(false);
-  const [phase, setPhase] = useState<"work" | "break">("work");
+  const defaultWork = 25 * 60;
+  const defaultBreak = 5 * 60;
 
-  // Simple local ticking
+  const { data: remoteState, isFetching, isLoading, refetch } = usePomodoroTimer();
+  const startTimer = useStartPomodoroTimer();
+  const pauseTimer = usePausePomodoroTimer();
+  const resetTimer = useResetPomodoroTimer();
+
+  const [viewState, setViewState] = useState<PomodoroTimerState | undefined>(remoteState);
+
+  const phase = viewState?.phase ?? "work";
+  const isRunning = viewState?.is_running ?? false;
+  const status = viewState?.status ?? "not_started";
+
+  const [timeLeft, setTimeLeft] = useState(defaultWork);
+
+  const deriveRemaining = (state: typeof remoteState | undefined) => {
+    if (!state) {
+      return phase === "work" ? defaultWork : defaultBreak;
+    }
+    const remainingFromState = state.remaining_seconds ?? 0;
+    if (state.is_running && state.ends_at) {
+      const diff = Math.floor((new Date(state.ends_at).getTime() - Date.now()) / 1000);
+      return Math.max(0, diff > 0 ? diff : remainingFromState);
+    }
+    return remainingFromState;
+  };
+
+  // Sync local display with backend snapshot
   useEffect(() => {
-    if (!isRunning) return;
+    if (!remoteState) return;
+    setViewState(remoteState);
+    setTimeLeft(deriveRemaining(remoteState));
+  }, [remoteState]);
+
+  // Local ticking for smooth UX between polls
+  useEffect(() => {
+    if (!viewState?.is_running) return;
 
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Timer finished - switch phases
-          setIsRunning(false);
-          setPhase((current) => current === "work" ? "break" : "work");
-          return current === "work" ? 5 * 60 : 25 * 60; // 5 min break, 25 min work
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => Math.max(prev - 1, 0));
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [viewState?.is_running]);
 
-  const handleStart = () => setIsRunning(true);
-  const handlePause = () => setIsRunning(false);
-  const handleReset = () => {
-    setIsRunning(false);
-    setTimeLeft(phase === "work" ? 25 * 60 : 5 * 60);
+  const phaseDuration = useMemo(() => (phase === "work" ? defaultWork : defaultBreak), [phase]);
+
+  const handleStart = async () => {
+    if (!remoteState) {
+      await refetch();
+    }
+    const duration = timeLeft > 0 ? timeLeft : phaseDuration;
+    const result = await startTimer.mutateAsync({
+      phase,
+      duration_seconds: duration,
+      state_id: (viewState ?? remoteState)?.id,
+    });
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
   };
 
-  const progress = phase === "work"
-    ? ((25 * 60 - timeLeft) / (25 * 60)) * 100
-    : ((5 * 60 - timeLeft) / (5 * 60)) * 100;
+  const handlePause = async () => {
+    if (!(viewState ?? remoteState)?.id) {
+      await refetch();
+      return;
+    }
+    const result = await pauseTimer.mutateAsync({ state_id: (viewState ?? remoteState)!.id });
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
+  };
+
+  const handleReset = async () => {
+    const duration = phaseDuration;
+    const result = await resetTimer.mutateAsync({
+      phase,
+      duration_seconds: duration,
+      state_id: (viewState ?? remoteState)?.id,
+    });
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
+  };
+
+  const progress = Math.min(
+    100,
+    Math.max(0, ((phaseDuration - timeLeft) / phaseDuration) * 100),
+  );
 
   return (
     <div className="flex flex-col items-center justify-center p-8 space-y-8">
@@ -72,7 +128,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
             {formatTime(timeLeft)}
           </div>
           <div className="mt-2 text-lg uppercase text-muted-foreground">
-            {phase === "work" ? "Focus Time" : "Break Time"}
+            {phase === "work" ? "Focus Time" : "Break Time"} {status === "paused" ? "(Paused)" : ""}
           </div>
         </div>
       </div>
@@ -87,6 +143,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
           size="lg"
           className="h-16 w-16 rounded-full p-0 text-foreground"
           onClick={isRunning ? handlePause : handleStart}
+          disabled={isFetching || isLoading || startTimer.isPending || pauseTimer.isPending || resetTimer.isPending}
         >
           {isRunning ? (
             <Pause className="h-8 w-8 text-foreground" strokeWidth={2.5} />

@@ -12,6 +12,7 @@ from app.schemas.pomodoro import (
     PomodoroStats,
     PomodoroTimerState,
     PomodoroTimerStart,
+    PomodoroTimerPause,
     PomodoroTimerReset,
 )
 from app.services.pomodoro import PomodoroService
@@ -105,13 +106,14 @@ def start_timer(
 
 @router.post("/timer/pause", response_model=PomodoroTimerState)
 def pause_timer(
+    payload: PomodoroTimerPause,
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
     Pause the timer; remaining time is persisted.
     """
     service = PomodoroService(db)
-    return service.pause_timer()
+    return service.pause_timer(payload)
 
 
 @router.post("/timer/reset", response_model=PomodoroTimerState)

@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.models.timer_state import PomodoroTimerState
+from uuid import uuid4
 
 
 class PomodoroTimerRepository:
@@ -16,6 +17,10 @@ class PomodoroTimerRepository:
             self.db.add(state)
             self.db.commit()
             self.db.refresh(state)
+        return state
+
+    def refresh_uuid(self, state: PomodoroTimerState) -> PomodoroTimerState:
+        state.current_id = str(uuid4())
         return state
 
     def save(self, state: PomodoroTimerState) -> PomodoroTimerState:

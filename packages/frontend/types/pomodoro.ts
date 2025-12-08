@@ -39,14 +39,20 @@ export interface PomodoroStats {
   total_minutes: number;
   daily_average: number;
   total_hours: number;
+  completed_phases: number;
+  total_work_seconds: number;
 }
 
 export type PomodoroPhase = "work" | "break";
 
 export interface PomodoroTimerState {
+  id: string;
   phase: PomodoroPhase;
+  status: "active" | "finished" | "paused" | "not_started";
   is_running: boolean;
   remaining_seconds: number;
+  elapsed_seconds: number;
+  started_at: string | null;
   ends_at: string | null;
   updated_at: string;
 }

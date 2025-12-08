@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export type TimerPhase = "work" | "shortBreak" | "longBreak";
 
@@ -26,102 +25,61 @@ interface TimerState {
 }
 
 export const useTimerStore = create<TimerState>()(
-  persist(
-    (set, get) => ({
-      phase: "work",
-      timeLeft: 25 * 60,
-      isRunning: false,
-      completedPomodoros: 0,
-      lastUpdated: null,
-      sessionStart: null,
-      pausedAt: null,
-      resumeAllowed: false,
-      timeSnapshot: 25 * 60,
+  (set, get) => ({
+    phase: "work",
+    timeLeft: 25 * 60,
+    isRunning: false,
+    completedPomodoros: 0,
+    lastUpdated: null,
+    sessionStart: null,
+    pausedAt: null,
+    resumeAllowed: false,
+    timeSnapshot: 25 * 60,
 
-      setPhase: (phase, duration) =>
-        set({
-          phase,
-          timeLeft: duration,
-          timeSnapshot: duration,
-          isRunning: false,
-          lastUpdated: null,
-          sessionStart: null,
-          pausedAt: null,
-          resumeAllowed: false,
-        }),
-      setTimeLeft: (time) =>
-        set((state) => ({
-          timeLeft: typeof time === "function" ? time(state.timeLeft) : time,
-          timeSnapshot: typeof time === "function" ? time(state.timeLeft) : time,
-          lastUpdated: state.isRunning ? Date.now() : state.lastUpdated,
-        })),
-      startTimer: () =>
-        set((state) => ({
-          isRunning: true,
-          lastUpdated: Date.now(),
-          sessionStart: state.sessionStart ?? Date.now(),
-          pausedAt: null,
-          resumeAllowed: true,
-        })),
-      pauseTimer: () =>
-        set({
-          isRunning: false,
-          lastUpdated: null,
-          pausedAt: Date.now(),
-          resumeAllowed: false,
-        }),
-      resetTimer: (duration) =>
-        set({
-          timeLeft: duration,
-          timeSnapshot: duration,
-          isRunning: false,
-          lastUpdated: null,
-          sessionStart: null,
-          pausedAt: null,
-          resumeAllowed: false,
-        }),
-      incrementCompleted: () => set((state) => ({ completedPomodoros: state.completedPomodoros + 1 })),
-      resetCompleted: () => set({ completedPomodoros: 0 }),
-    }),
-    {
-      name: "pomodoro-timer-storage",
-      partialize: (state) => ({ 
-        phase: state.phase, 
-        completedPomodoros: state.completedPomodoros,
-        timeLeft: state.timeLeft,
-        isRunning: state.isRunning,
-        lastUpdated: state.isRunning ? state.lastUpdated : null,
-        sessionStart: state.sessionStart,
-        pausedAt: state.pausedAt,
-        resumeAllowed: state.resumeAllowed,
-        timeSnapshot: state.timeSnapshot,
-      }), 
-      onRehydrateStorage: () => (state, error) => {
-        if (!state) return;
-        const { isRunning, lastUpdated, pausedAt, timeSnapshot, resumeAllowed } = state as TimerState;
-
-        // Always restore snapshot
-        useTimerStore.setState({ timeLeft: timeSnapshot, timeSnapshot });
-
-        // If paused/reset or resume not allowed, force stop and clear lastUpdated
-        if (!isRunning || pausedAt || !lastUpdated || !resumeAllowed) {
-          useTimerStore.setState({ isRunning: false, lastUpdated: null, resumeAllowed: false });
-          return;
-        }
-
-        // If running with a timestamp, reconcile elapsed time
-        const elapsedSeconds = Math.max(0, Math.floor((Date.now() - lastUpdated) / 1000));
-        if (elapsedSeconds > 0) {
-          const updatedTimeLeft = timeSnapshot - elapsedSeconds;
-          useTimerStore.setState({
-            timeLeft: Math.max(updatedTimeLeft, 0),
-            timeSnapshot: Math.max(updatedTimeLeft, 0),
-            isRunning: updatedTimeLeft > 0,
-            lastUpdated: updatedTimeLeft > 0 ? Date.now() : null,
-          });
-        }
-      },
-    }
-  )
+    setPhase: (phase, duration) =>
+      set({
+        phase,
+        timeLeft: duration,
+        timeSnapshot: duration,
+        isRunning: false,
+        lastUpdated: null,
+        sessionStart: null,
+        pausedAt: null,
+        resumeAllowed: false,
+      }),
+    setTimeLeft: (time) =>
+      set((state) => ({
+        timeLeft: typeof time === "function" ? time(state.timeLeft) : time,
+        timeSnapshot: typeof time === "function" ? time(state.timeLeft) : time,
+        lastUpdated: state.isRunning ? Date.now() : state.lastUpdated,
+      })),
+    startTimer: () =>
+      set((state) => ({
+        isRunning: true,
+        lastUpdated: Date.now(),
+        sessionStart: state.sessionStart ?? Date.now(),
+        pausedAt: null,
+        resumeAllowed: true,
+      })),
+    pauseTimer: () =>
+      set({
+        isRunning: false,
+        lastUpdated: null,
+        pausedAt: Date.now(),
+        resumeAllowed: false,
+      }),
+    resetTimer: (duration) =>
+      set({
+        timeLeft: duration,
+        timeSnapshot: duration,
+        isRunning: false,
+        lastUpdated: null,
+        sessionStart: null,
+        pausedAt: null,
+        resumeAllowed: false,
+      }),
+    incrementCompleted: () => set((state) => ({ completedPomodoros: state.completedPomodoros + 1 })),
+    resetCompleted: () => set({ completedPomodoros: 0 }),
+  })
 );
 

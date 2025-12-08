@@ -29,7 +29,9 @@ class PomodoroSessionRepository(BaseRepository[PomodoroSession]):
         
         return {
             "total_sessions": total_count,
-            "total_minutes": total_minutes
+            "total_minutes": total_minutes,
+            "total_work_seconds": (total_minutes or 0) * 60,
+            "completed_phases": total_count,
         }
 
 

@@ -41,17 +41,17 @@ const fetchTimer = async () => {
   return data;
 };
 
-const startTimer = async (payload: { phase: PomodoroPhase; duration_seconds: number }) => {
+const startTimer = async (payload: { phase: PomodoroPhase; duration_seconds: number; state_id?: string | null }) => {
   const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/start", payload);
   return data;
 };
 
-const pauseTimerApi = async () => {
-  const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/pause");
+const pauseTimerApi = async (payload: { state_id: string }) => {
+  const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/pause", payload);
   return data;
 };
 
-const resetTimerApi = async (payload: { phase: PomodoroPhase; duration_seconds: number }) => {
+const resetTimerApi = async (payload: { phase: PomodoroPhase; duration_seconds: number; state_id?: string | null }) => {
   const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/reset", payload);
   return data;
 };
@@ -114,7 +114,7 @@ export function usePomodoroTimer() {
   return useQuery({
     queryKey: pomodoroKeys.timer(),
     queryFn: fetchTimer,
-    refetchInterval: 1000 * 15, // safety refresh
+    refetchInterval: 1000 * 5, // poll every 5s
   });
 }
 

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, validator
+from pydantic import ConfigDict
 
 
 class PomodoroSessionBase(BaseModel):
@@ -50,6 +51,8 @@ class PomodoroStats(BaseModel):
     total_minutes: int
     daily_average: float
     total_hours: float
+    completed_phases: int
+    total_work_seconds: int
 
 
 class PomodoroPhase(BaseModel):
@@ -57,22 +60,31 @@ class PomodoroPhase(BaseModel):
 
 
 class PomodoroTimerState(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: str = Field(..., validation_alias="current_id", serialization_alias="id")
     phase: str
+    status: str
     is_running: bool
     remaining_seconds: int
+    elapsed_seconds: int
+    started_at: datetime | None
     ends_at: datetime | None
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class PomodoroTimerStart(BaseModel):
     phase: str
     duration_seconds: int = Field(..., gt=0)
+    state_id: str | None = None
+
+
+class PomodoroTimerPause(BaseModel):
+    state_id: str
 
 
 class PomodoroTimerReset(BaseModel):
     phase: str
     duration_seconds: int = Field(..., gt=0)
+    state_id: str | None = None
 
