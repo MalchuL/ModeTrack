@@ -9,7 +9,10 @@ from app.schemas.pomodoro import (
     PomodoroSessionResponse, 
     PomodoroSettingsUpdate, 
     PomodoroSettingsResponse,
-    PomodoroStats
+    PomodoroStats,
+    PomodoroTimerState,
+    PomodoroTimerStart,
+    PomodoroTimerReset,
 )
 from app.services.pomodoro import PomodoroService
 
@@ -75,4 +78,61 @@ def get_stats(
     """
     service = PomodoroService(db)
     return service.get_stats()
+
+
+@router.get("/timer", response_model=PomodoroTimerState)
+def get_timer(
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Get current timer state.
+    """
+    service = PomodoroService(db)
+    return service.get_timer()
+
+
+@router.post("/timer/start", response_model=PomodoroTimerState)
+def start_timer(
+    payload: PomodoroTimerStart,
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Start (or restart) the timer with a phase and duration.
+    """
+    service = PomodoroService(db)
+    return service.start_timer(payload)
+
+
+@router.post("/timer/pause", response_model=PomodoroTimerState)
+def pause_timer(
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Pause the timer; remaining time is persisted.
+    """
+    service = PomodoroService(db)
+    return service.pause_timer()
+
+
+@router.post("/timer/reset", response_model=PomodoroTimerState)
+def reset_timer(
+    payload: PomodoroTimerReset,
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Reset the timer to a phase and duration; does not start running.
+    """
+    service = PomodoroService(db)
+    return service.reset_timer(payload)
+
+
+@router.post("/timer/complete", response_model=PomodoroTimerState)
+def complete_phase(
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Complete current phase and start the next one automatically.
+    """
+    service = PomodoroService(db)
+    return service.complete_phase()
 

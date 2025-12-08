@@ -51,3 +51,28 @@ class PomodoroStats(BaseModel):
     daily_average: float
     total_hours: float
 
+
+class PomodoroPhase(BaseModel):
+    phase: str
+
+
+class PomodoroTimerState(BaseModel):
+    phase: str
+    is_running: bool
+    remaining_seconds: int
+    ends_at: datetime | None
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PomodoroTimerStart(BaseModel):
+    phase: str
+    duration_seconds: int = Field(..., gt=0)
+
+
+class PomodoroTimerReset(BaseModel):
+    phase: str
+    duration_seconds: int = Field(..., gt=0)
+

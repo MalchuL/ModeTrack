@@ -6,7 +6,6 @@ import { LayoutDashboard, ListTodo, CalendarRange, Timer, Music, Menu, BookOpen 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useTimerStore } from "@/stores/timer-store";
 import { APP_NAME } from "@/lib/constants";
 
 const navItems = [
@@ -21,12 +20,6 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { timeLeft, isRunning, phase } = useTimerStore();
-
-  // Simple format for mini timer
-  const m = Math.floor(timeLeft / 60);
-  const s = timeLeft % 60;
-  const timeString = `${m}:${s.toString().padStart(2, "0")}`;
 
   return (
     <>
@@ -74,21 +67,6 @@ export function Sidebar() {
             );
           })}
         </nav>
-
-        {/* Mini Timer Display */}
-        <div className="p-4 border-t border-transparent">
-          <Link href="/pomodoro">
-             <div className="flex items-center justify-between p-3 rounded-xl neu-surface-soft shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)] transition-all cursor-pointer">
-               <div className="flex items-center gap-2">
-                 <div className={cn("w-2 h-2 rounded-full animate-pulse", isRunning ? "bg-green-500" : "bg-yellow-500")} />
-                 <span className="text-xs font-medium uppercase text-muted-foreground">
-                   {phase === "work" ? "Focus" : "Break"}
-                 </span>
-               </div>
-               <span className="font-mono font-bold text-lg">{timeString}</span>
-             </div>
-          </Link>
-        </div>
       </aside>
 
       {/* Overlay for mobile */}

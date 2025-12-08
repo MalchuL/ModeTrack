@@ -41,3 +41,13 @@ export interface PomodoroStats {
   total_hours: number;
 }
 
+export type PomodoroPhase = "work" | "break";
+
+export interface PomodoroTimerState {
+  phase: PomodoroPhase;
+  is_running: boolean;
+  remaining_seconds: number;
+  ends_at: string | null;
+  updated_at: string;
+}
+
