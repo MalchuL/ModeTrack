@@ -84,14 +84,14 @@ export function Timer({ onOpenSettings }: TimerProps) {
         </Button>
 
         <Button
-          size="icon"
-          className="h-16 w-16 rounded-full text-foreground"
+          size="lg"
+          className="h-16 w-16 rounded-full p-0 text-foreground"
           onClick={isRunning ? handlePause : handleStart}
         >
           {isRunning ? (
             <Pause className="h-8 w-8 text-foreground" strokeWidth={2.5} />
           ) : (
-            <Play className="h-8 w-8 ml-1 text-foreground" strokeWidth={2.5} />
+            <Play className="h-8 w-8 text-foreground" strokeWidth={2.5} />
           )}
         </Button>
 
