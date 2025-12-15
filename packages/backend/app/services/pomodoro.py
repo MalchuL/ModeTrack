@@ -193,10 +193,10 @@ class PomodoroService:
         return self._attach_metadata(state)
 
     def complete_phase(self) -> PomodoroTimerState:
+        """
+        Skip the current phase and advance to the next phase.
+        Uses the same phase-advance logic as natural completion (incl. long breaks).
+        """
         state = self._rehydrate_timer()
-        state.status = "finished"
-        state.is_running = False
-        state.ends_at = None
-        state = self.timer_repo.save(state)
-        return self._attach_metadata(state)
+        return self._advance_phase(state)
 

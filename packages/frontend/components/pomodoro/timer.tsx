@@ -1,4 +1,4 @@
-import { Play, Pause, RotateCcw, Settings } from "lucide-react";
+import { Play, Pause, RotateCcw, Settings, SkipForward } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,6 +7,7 @@ import {
   usePausePomodoroTimer,
   useResetPomodoroTimer,
   usePomodoroSettings,
+  useCompletePomodoroPhase,
 } from "@/hooks/use-pomodoro";
 import type { PomodoroTimerState, PomodoroPhase } from "@/types/pomodoro";
 import { playNotificationSound } from "@/lib/audio";
@@ -33,6 +34,7 @@ export function Timer({ onOpenSettings }: TimerProps) {
   const startTimer = useStartPomodoroTimer();
   const pauseTimer = usePausePomodoroTimer();
   const resetTimer = useResetPomodoroTimer();
+  const completePhase = useCompletePomodoroPhase();
 
   const [viewState, setViewState] = useState<PomodoroTimerState | undefined>(remoteState);
   const prevPhaseRef = useRef<string | undefined>(remoteState?.phase);
@@ -122,6 +124,12 @@ export function Timer({ onOpenSettings }: TimerProps) {
     setTimeLeft(deriveRemaining(result));
   };
 
+  const handleSkipToNextPhase = async () => {
+    const result = await completePhase.mutateAsync();
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
+  };
+
   const progress = Math.min(
     100,
     Math.max(0, phaseDuration === 0 ? 0 : ((phaseDuration - timeLeft) / phaseDuration) * 100),
@@ -131,7 +139,17 @@ export function Timer({ onOpenSettings }: TimerProps) {
   const cyclesCompleted = viewState?.cycles_completed ?? 0;
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 space-y-8">
+    <div className="relative flex flex-col items-center justify-center p-8 space-y-8">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onOpenSettings}
+        className="absolute top-4 right-4"
+        title="Settings"
+        aria-label="Settings"
+      >
+        <Settings className="h-4 w-4" />
+      </Button>
       {/* Timer Display */}
       <div className="relative flex items-center justify-center">
         <svg className="w-64 h-64 transform -rotate-90">
@@ -183,8 +201,22 @@ export function Timer({ onOpenSettings }: TimerProps) {
           )}
         </Button>
 
-        <Button variant="outline" size="icon" onClick={onOpenSettings}>
-          <Settings className="h-4 w-4" />
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleSkipToNextPhase}
+          disabled={
+            isFetching ||
+            isLoading ||
+            startTimer.isPending ||
+            pauseTimer.isPending ||
+            resetTimer.isPending ||
+            completePhase.isPending
+          }
+          title={phase === "work" ? "Skip focus → break" : "Skip break → focus"}
+          aria-label={phase === "work" ? "Skip focus to break" : "Skip break to focus"}
+        >
+          <SkipForward className="h-5 w-5" />
         </Button>
       </div>
     </div>
