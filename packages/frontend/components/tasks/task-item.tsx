@@ -288,10 +288,10 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
   }
 
   const priorityColor = {
-    [TaskPriority.LOW]: "text-blue-600",
-    [TaskPriority.MEDIUM]: "text-yellow-600",
-    [TaskPriority.HIGH]: "text-orange-600",
-    [TaskPriority.URGENT]: "text-red-600",
+    [TaskPriority.LOW]: "text-[var(--priority-low)]",
+    [TaskPriority.MEDIUM]: "text-[var(--priority-medium)]",
+    [TaskPriority.HIGH]: "text-[var(--priority-high)]",
+    [TaskPriority.URGENT]: "text-[var(--priority-urgent)]",
   };
 
   const priorityAnchorRef = useRef<HTMLDivElement>(null);
@@ -333,7 +333,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
     <div 
         key="status"
         className={cn(
-        "px-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all select-none neu-surface-soft shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)] border border-transparent",
+        "px-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-all select-none neu-surface-soft badge-dark shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)] border border-transparent",
         task.status === TaskStatus.IN_PROGRESS 
             ? "bg-[rgba(183,161,255,0.18)] text-[#c8b7ff] border-[rgba(183,161,255,0.35)]"
             : "text-muted-foreground"
@@ -357,8 +357,8 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
       ) : (
           <div 
               className={cn(
-              "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft shadow-[var(--shadow-soft)] cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs",
-              !isCompleted && isOverdueOrToday ? "ring-1 ring-red-300 text-red-600 font-semibold dark:ring-red-500/50" : "text-muted-foreground",
+              "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft badge-dark shadow-[var(--shadow-soft)] cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs",
+              !isCompleted && isOverdueOrToday ? "ring-1 ring-red-300 text-[var(--badge-overdue-text)] font-semibold dark:ring-red-500/50 text-outline-strong" : "text-muted-foreground",
                // If not set, invisible unless group hover
               !task.due_date && "opacity-0 group-hover:opacity-100 transition-opacity"
               )}
@@ -386,7 +386,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
       ) : (
           <div 
               className={cn(
-              "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft shadow-[var(--shadow-soft)] capitalize cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs",
+              "flex items-center gap-1 px-3 py-1 rounded-full neu-surface-soft badge-dark shadow-[var(--shadow-soft)] capitalize cursor-pointer hover:shadow-[var(--shadow-raised)] text-xs font-semibold text-outline-strong",
               priorityColor[task.priority]
               )}
               onClick={(e) => { 
@@ -425,14 +425,14 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
                 task.tags.map((tag) => (
                     <span
                     key={tag}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full neu-surface-soft text-muted-foreground shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)]"
+                    className="flex items-center gap-1 px-2 py-1 rounded-full neu-surface-soft badge-dark text-muted-foreground shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-raised)]"
                     >
                     <Tag className="h-3 w-3" />
                     {tag}
                     </span>
                 ))
             ) : (
-                <span className="flex items-center gap-1 px-2 py-1 rounded-full neu-surface-soft text-muted-foreground opacity-60 hover:opacity-100 shadow-[var(--shadow-soft)] ml-1">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-full neu-surface-soft badge-dark text-muted-foreground opacity-60 hover:opacity-100 shadow-[var(--shadow-soft)] ml-1">
                     <Tag className="h-3 w-3" /> Add Tags
                 </span>
             )}
@@ -444,7 +444,7 @@ export const TaskItem = memo(function TaskItem({ task, onEdit }: TaskItemProps) 
   const DescriptionBadge = !task.description && (
       <div 
         key="description"
-        className="flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-muted-foreground/30 bg-transparent text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer neu-surface-soft hover:shadow-[var(--shadow-raised)]"
+        className="flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-muted-foreground/30 bg-transparent text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer neu-surface-soft badge-dark hover:shadow-[var(--shadow-raised)]"
         onClick={handleAddDescription}
         title="Add description"
       >

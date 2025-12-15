@@ -55,12 +55,12 @@ export function ToastContainer() {
           className={cn(
             "pointer-events-auto flex items-center justify-between rounded-xl neu-surface-soft border border-transparent p-4 shadow-[var(--shadow-raised)] transition-all animate-in slide-in-from-right",
             {
-              "ring-1 ring-border text-foreground": toast.type === "info",
-              "ring-1 ring-green-200/80 text-green-800 dark:ring-green-900 dark:text-green-200":
+              "ring-1 ring-border text-[var(--toast-text-info)]": toast.type === "info",
+              "ring-1 ring-green-200/80 text-[var(--toast-text-success)] dark:ring-green-900":
                 toast.type === "success",
-              "ring-1 ring-red-200/80 text-red-800 dark:ring-red-900 dark:text-red-200":
+              "ring-1 ring-red-200/80 text-[var(--toast-text-error)] dark:ring-red-900":
                 toast.type === "error",
-              "ring-1 ring-yellow-200/80 text-yellow-800 dark:ring-yellow-900 dark:text-yellow-200":
+              "ring-1 ring-yellow-200/80 text-[var(--toast-text-warning)] dark:ring-yellow-900":
                 toast.type === "warning",
             }
           )}

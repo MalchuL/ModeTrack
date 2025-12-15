@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #0d050f;
+  --background: #1a0f3b;
   --foreground: #fffaf7;
 
   --primary: #ff5f9c;
@@ -37,6 +37,16 @@
   --shadow-strong: 0 28px 74px rgba(18, 3, 18, 0.6);
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.2);
   --glow: 0 0 0 4px rgba(255, 126, 160, 0.44);
+  /* Badge + toast palette */
+  --priority-low: #2e68db;
+  --priority-medium: #e6b112;
+  --priority-high: #e87432;
+  --priority-urgent: rgba(211, 37, 40, 0.93);
+  --badge-overdue-text: rgba(255, 0, 4, 0.93);
+  --toast-text-info: #f7f4ff;
+  --toast-text-success: #e6fff0;
+  --toast-text-error: #ffe6ec;
+  --toast-text-warning: #fff3d6;
   --radius-lg: 16px;
   --radius-md: 12px;
 
@@ -51,7 +61,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0d050f;
+    --background: #1a0f3b;
     --foreground: #fffaf7;
 
     --primary: #ff5f9c;
@@ -84,6 +94,15 @@
     --shadow-strong: 0 28px 74px rgba(18, 3, 18, 0.6);
     --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.2);
     --glow: 0 0 0 4px rgba(255, 126, 160, 0.44);
+    --priority-low: #4f7fe0;
+    --priority-medium: #e6b112;
+    --priority-high: #e87432;
+    --priority-urgent: rgba(255, 0, 4, 0.93);
+    --badge-overdue-text: rgba(255, 0, 4, 0.93);
+    --toast-text-info: #f7f4ff;
+    --toast-text-success: #e6fff0;
+    --toast-text-error: #ffe6ec;
+    --toast-text-warning: #fff3d6;
     --bg-wander: 1.35;
   }
 }
@@ -257,5 +276,19 @@ optgroup {
 @keyframes task-updated-overlay-fade {
   0% { opacity: 1; }
   100% { opacity: 0; }
+}
+
+/* Text outline helpers for high-contrast accents */
+.text-outline-strong {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 0 0.5px rgba(0, 0, 0, 0.65);
+}
+
+/* Darker badge surface */
+.badge-dark {
+  background: linear-gradient(145deg, rgba(78, 29, 92, 0.42), rgba(0, 0, 0, 0.22));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
 }
 
