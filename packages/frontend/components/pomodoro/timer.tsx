@@ -1,11 +1,16 @@
-import { useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw, Settings } from "lucide-react";
-import { useTimerStore, TimerPhase } from "@/stores/timer-store";
-import { usePomodoroSettings, useLogPomodoroSession } from "@/hooks/use-pomodoro";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  usePomodoroTimer,
+  useStartPomodoroTimer,
+  usePausePomodoroTimer,
+  useResetPomodoroTimer,
+  usePomodoroSettings,
+} from "@/hooks/use-pomodoro";
+import type { PomodoroTimerState, PomodoroPhase } from "@/types/pomodoro";
 import { playNotificationSound } from "@/lib/audio";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { DEFAULT_NOTIFICATION_SOUND } from "@/constants/pomodoro";
 
 // Helper to format MM:SS
 const formatTime = (seconds: number) => {
@@ -19,225 +24,168 @@ interface TimerProps {
 }
 
 export function Timer({ onOpenSettings }: TimerProps) {
-  const {
-    phase,
-    timeLeft,
-    isRunning,
-    setPhase,
-    setTimeLeft,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    incrementCompleted,
-    completedPomodoros,
-  } = useTimerStore();
-
   const { data: settings } = usePomodoroSettings();
-  const logSession = useLogPomodoroSession();
+  const workSeconds = (settings?.work_duration_minutes ?? 25) * 60;
+  const breakSeconds = (settings?.short_break_minutes ?? 5) * 60;
+  const longBreakSeconds = (settings?.long_break_minutes ?? 15) * 60;
 
-  // Use refs to track start time for logging
-  const startTimeRef = useRef<Date | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { data: remoteState, isFetching, isLoading, refetch } = usePomodoroTimer();
+  const startTimer = useStartPomodoroTimer();
+  const pauseTimer = usePausePomodoroTimer();
+  const resetTimer = useResetPomodoroTimer();
 
-  // Defaults
-  const workDuration = (settings?.work_duration_minutes || 25) * 60;
-  const shortBreakDuration = (settings?.short_break_minutes || 5) * 60;
-  const longBreakDuration = (settings?.long_break_minutes || 15) * 60;
-  const longBreakInterval = settings?.long_break_interval || 4;
+  const [viewState, setViewState] = useState<PomodoroTimerState | undefined>(remoteState);
+  const prevPhaseRef = useRef<string | undefined>(remoteState?.phase);
 
-  // Initialize or update duration when settings load/change AND not running
+  const phase = viewState?.phase ?? "work";
+  const isRunning = viewState?.is_running ?? false;
+  const status = viewState?.status ?? "not_started";
+
+  const [timeLeft, setTimeLeft] = useState(workSeconds);
+
+  const deriveRemaining = (state: typeof remoteState | undefined) => {
+    if (!state) {
+      if (phase === "long_break") return longBreakSeconds;
+      return phase === "work" ? workSeconds : breakSeconds;
+    }
+    const remainingFromState = state.remaining_seconds ?? 0;
+    if (state.is_running && state.ends_at) {
+      const diff = Math.floor((new Date(state.ends_at).getTime() - Date.now()) / 1000);
+      return Math.max(0, diff > 0 ? diff : remainingFromState);
+    }
+    return remainingFromState;
+  };
+
+  // Sync local display with backend snapshot
   useEffect(() => {
-    if (!isRunning) {
-      if (phase === "work" && timeLeft !== workDuration && timeLeft === 25 * 60) {
-          // Only update if default or matching old default? 
-          // Actually, if settings change, we might want to reset?
-          // For simpler UX, we update if the user hasn't started (timeLeft == full duration of something)
-          // But matching "full duration of something" is tricky if we don't know what it was.
-          // Let's just ensure if we are at "initial" state, we sync.
-          resetTimer(workDuration);
-      }
-    }
-  }, [settings, phase, isRunning, resetTimer, workDuration]);
+    if (!remoteState) return;
+    setViewState(remoteState);
+    setTimeLeft(deriveRemaining(remoteState));
 
-  // Timer Logic
+    if (settings?.sound_enabled && prevPhaseRef.current && prevPhaseRef.current !== remoteState.phase) {
+      playNotificationSound(DEFAULT_NOTIFICATION_SOUND);
+    }
+    prevPhaseRef.current = remoteState.phase;
+  }, [remoteState, workSeconds, breakSeconds, settings?.sound_enabled]);
+
+  // Local ticking for smooth UX between polls
   useEffect(() => {
-    if (isRunning) {
-      if (!startTimeRef.current) {
-        startTimeRef.current = new Date();
-      }
+    if (!viewState?.is_running) return;
 
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [viewState?.is_running]);
+
+  const phaseDuration = useMemo(
+    () => {
+      if (phase === "long_break") return longBreakSeconds;
+      return phase === "work" ? workSeconds : breakSeconds;
+    },
+    [phase, workSeconds, breakSeconds, longBreakSeconds]
+  );
+
+  const handleStart = async () => {
+    if (!remoteState) {
+      await refetch();
     }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, timeLeft, setTimeLeft]);
-
-  // Completion Logic
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      handleCompletion();
-    }
-  }, [timeLeft]);
-
-  const handleCompletion = () => {
-    pauseTimer();
-    if (settings?.sound_enabled) {
-      playNotificationSound();
-    }
-
-    const now = new Date();
-    const startTime = startTimeRef.current || new Date(now.getTime() - getPhaseDuration(phase) * 1000); // fallback
-    
-    if (phase === "work") {
-      // Log session
-      logSession.mutate({
-        start_time: startTime.toISOString(),
-        end_time: now.toISOString(),
-        duration_minutes: settings?.work_duration_minutes || 25,
-        completed: true,
-      });
-      
-      incrementCompleted();
-      
-      // Determine next phase
-      const nextIsLongBreak = (completedPomodoros + 1) % longBreakInterval === 0;
-      if (nextIsLongBreak) {
-        setPhase("longBreak", longBreakDuration);
-      } else {
-        setPhase("shortBreak", shortBreakDuration);
-      }
-
-      if (settings?.auto_start_breaks) {
-        startTimer();
-      }
-    } else {
-      // Break finished
-      setPhase("work", workDuration);
-      if (settings?.auto_start_pomodoros) {
-        startTimer();
-      }
-    }
-    
-    startTimeRef.current = null;
+    const duration = timeLeft > 0 ? timeLeft : phaseDuration;
+    const result = await startTimer.mutateAsync({
+      phase,
+      duration_seconds: duration,
+      state_id: (viewState ?? remoteState)?.id,
+    });
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
   };
 
-  const getPhaseDuration = (p: TimerPhase) => {
-    switch (p) {
-      case "work": return workDuration;
-      case "shortBreak": return shortBreakDuration;
-      case "longBreak": return longBreakDuration;
+  const handlePause = async () => {
+    if (!(viewState ?? remoteState)?.id) {
+      await refetch();
+      return;
     }
+    const result = await pauseTimer.mutateAsync({ state_id: (viewState ?? remoteState)!.id });
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
   };
 
-  const currentTotalDuration = getPhaseDuration(phase);
-  const progress = ((currentTotalDuration - timeLeft) / currentTotalDuration) * 100;
-
-  const handleToggle = () => {
-    if (isRunning) {
-      pauseTimer();
-    } else {
-      startTimer();
-    }
+  const handleReset = async () => {
+    const duration = phaseDuration;
+    const result = await resetTimer.mutateAsync({
+      phase,
+      duration_seconds: duration,
+      state_id: (viewState ?? remoteState)?.id,
+    });
+    setViewState(result);
+    setTimeLeft(deriveRemaining(result));
   };
 
-  const handleReset = () => {
-    pauseTimer();
-    resetTimer(getPhaseDuration(phase));
-    startTimeRef.current = null;
-  };
+  const progress = Math.min(
+    100,
+    Math.max(0, phaseDuration === 0 ? 0 : ((phaseDuration - timeLeft) / phaseDuration) * 100),
+  );
 
-  const handleSkip = () => {
-     // Manual skip
-     handleCompletion();
-  };
-  
-  // Document title update
-  useEffect(() => {
-    document.title = `${formatTime(timeLeft)} - ${phase === "work" ? "Work" : "Break"}`;
-    return () => {
-      document.title = "Productivity App";
-    }
-  }, [timeLeft, phase]);
+  const nextLongBreakIn = viewState?.next_long_break_in ?? (settings?.long_break_interval ?? 4);
+  const cyclesCompleted = viewState?.cycles_completed ?? 0;
 
   return (
     <div className="flex flex-col items-center justify-center p-8 space-y-8">
       {/* Timer Display */}
       <div className="relative flex items-center justify-center">
-        {/* Circular Progress SVG */}
         <svg className="w-64 h-64 transform -rotate-90">
           <circle
-            cx="128"
-            cy="128"
-            r="120"
-            stroke="currentColor"
-            strokeWidth="8"
-            fill="transparent"
+            cx="128" cy="128" r="120"
+            stroke="currentColor" strokeWidth="8" fill="transparent"
             className="text-secondary"
           />
           <circle
-            cx="128"
-            cy="128"
-            r="120"
-            stroke="currentColor"
-            strokeWidth="8"
-            fill="transparent"
+            cx="128" cy="128" r="120"
+            stroke="currentColor" strokeWidth="8" fill="transparent"
             strokeDasharray={2 * Math.PI * 120}
             strokeDashoffset={2 * Math.PI * 120 * (1 - progress / 100)}
-            className={cn(
-              "transition-all duration-1000 ease-linear",
-              phase === "work" ? "text-primary" : "text-green-500"
-            )}
+            className={phase === "work" ? "text-primary" : "text-green-500"}
           />
         </svg>
-        
+
         <div className="absolute flex flex-col items-center text-center">
-          <div className="text-5xl font-mono font-bold tracking-tighter">
+          <div className="text-5xl font-mono font-bold">
             {formatTime(timeLeft)}
           </div>
-          <div className="mt-2 text-lg font-medium uppercase tracking-widest text-muted-foreground">
-            {phase === "work" ? "Focus" : phase === "shortBreak" ? "Short Break" : "Long Break"}
+          <div className="mt-2 text-lg uppercase text-muted-foreground">
+            {phase === "work" ? "Focus Time" : "Break Time"} {status === "paused" ? "(Paused)" : ""}
           </div>
         </div>
       </div>
 
+        <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+          <div>Cycles completed: {cyclesCompleted}</div>
+          <div>To long break: {nextLongBreakIn}</div>
+        </div>
+
       {/* Controls */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleReset}
-          disabled={isRunning && timeLeft === currentTotalDuration}
-        >
+        <Button variant="outline" size="icon" onClick={handleReset}>
           <RotateCcw className="h-4 w-4" />
         </Button>
 
         <Button
           size="lg"
-          className="h-16 w-16 rounded-full"
-          onClick={handleToggle}
+          className="h-16 w-16 rounded-full p-0 text-foreground"
+          onClick={isRunning ? handlePause : handleStart}
+          disabled={isFetching || isLoading || startTimer.isPending || pauseTimer.isPending || resetTimer.isPending}
         >
-          {isRunning ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
+          {isRunning ? (
+            <Pause className="h-8 w-8 text-foreground" strokeWidth={2.5} />
+          ) : (
+            <Play className="h-8 w-8 text-foreground" strokeWidth={2.5} />
+          )}
         </Button>
 
         <Button variant="outline" size="icon" onClick={onOpenSettings}>
           <Settings className="h-4 w-4" />
         </Button>
-      </div>
-      
-      <div className="flex gap-2">
-         <div className="text-sm text-muted-foreground">
-            Session: {completedPomodoros % longBreakInterval} / {longBreakInterval}
-         </div>
       </div>
     </div>
   );

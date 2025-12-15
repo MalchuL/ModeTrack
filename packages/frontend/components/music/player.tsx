@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAudioStore } from "@/stores/audio-store";
-import { useTimerStore } from "@/stores/timer-store";
+import { usePomodoroTimer } from "@/hooks/use-pomodoro";
 import { usePlaylistByContext } from "@/hooks/use-playlists";
 import { PlaylistContext } from "@/types/playlist";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Volume2, VolumeX } from "lucide-react";
@@ -25,7 +25,8 @@ export function Player() {
     setQueue,
   } = useAudioStore();
 
-  const { phase } = useTimerStore();
+  const { data: timerState } = usePomodoroTimer();
+  const phase = timerState?.phase ?? "work";
   const prevPhaseRef = useRef(phase);
 
   // Auto-switch playlist on phase change

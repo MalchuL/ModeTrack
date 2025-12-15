@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { PomodoroSettings, PomodoroSettingsUpdate, PomodoroSession, PomodoroSessionCreate, PomodoroStats } from "@/types/pomodoro";
+import { PomodoroSettings, PomodoroSettingsUpdate, PomodoroSession, PomodoroSessionCreate, PomodoroStats, PomodoroTimerState, PomodoroPhase } from "@/types/pomodoro";
 import { toast } from "@/components/ui/toast";
 
 export const pomodoroKeys = {
@@ -8,6 +8,7 @@ export const pomodoroKeys = {
   settings: () => [...pomodoroKeys.all, "settings"] as const,
   sessions: () => [...pomodoroKeys.all, "sessions"] as const,
   stats: () => [...pomodoroKeys.all, "stats"] as const,
+  timer: () => [...pomodoroKeys.all, "timer"] as const,
 };
 
 const fetchSettings = async () => {
@@ -32,6 +33,31 @@ const logSession = async (session: PomodoroSessionCreate) => {
 
 const fetchStats = async () => {
   const { data } = await api.get<PomodoroStats>("/pomodoro/stats");
+  return data;
+};
+
+const fetchTimer = async () => {
+  const { data } = await api.get<PomodoroTimerState>("/pomodoro/timer");
+  return data;
+};
+
+const startTimer = async (payload: { phase: PomodoroPhase; duration_seconds: number; state_id?: string | null }) => {
+  const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/start", payload);
+  return data;
+};
+
+const pauseTimerApi = async (payload: { state_id: string }) => {
+  const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/pause", payload);
+  return data;
+};
+
+const resetTimerApi = async (payload: { phase: PomodoroPhase; duration_seconds: number; state_id?: string | null }) => {
+  const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/reset", payload);
+  return data;
+};
+
+const completePhaseApi = async () => {
+  const { data } = await api.post<PomodoroTimerState>("/pomodoro/timer/complete");
   return data;
 };
 
@@ -81,6 +107,54 @@ export function usePomodoroStats() {
   return useQuery({
     queryKey: pomodoroKeys.stats(),
     queryFn: fetchStats,
+  });
+}
+
+export function usePomodoroTimer() {
+  return useQuery({
+    queryKey: pomodoroKeys.timer(),
+    queryFn: fetchTimer,
+    refetchInterval: 1000 * 5, // poll every 5s
+  });
+}
+
+export function useStartPomodoroTimer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: startTimer,
+    onSuccess: (data) => {
+      queryClient.setQueryData(pomodoroKeys.timer(), data);
+    },
+  });
+}
+
+export function usePausePomodoroTimer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: pauseTimerApi,
+    onSuccess: (data) => {
+      queryClient.setQueryData(pomodoroKeys.timer(), data);
+    },
+  });
+}
+
+export function useResetPomodoroTimer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: resetTimerApi,
+    onSuccess: (data) => {
+      queryClient.setQueryData(pomodoroKeys.timer(), data);
+    },
+  });
+}
+
+export function useCompletePomodoroPhase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: completePhaseApi,
+    onSuccess: (data) => {
+      queryClient.setQueryData(pomodoroKeys.timer(), data);
+    },
   });
 }
 
